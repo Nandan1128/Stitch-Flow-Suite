@@ -13,16 +13,13 @@ import {
   SidebarMenuButton,
 } from '@/components/ui/sidebar';
 import {
-  Home,
+  LayoutDashboard,
   Users,
-  FileText,
-  BarChart,
   Scissors,
-  DollarSign,
+  BarChart2,
+  Calendar,
   Settings,
-  User,
-  Clock,
-  List
+  LogOut,
 } from 'lucide-react';
 
 const Sidebar: React.FC = () => {
@@ -33,25 +30,34 @@ const Sidebar: React.FC = () => {
     <SidebarComponent>
       <SidebarContent>
         <div className="px-3 py-4">
-          <div className="flex items-center px-2">
-            <div className="bg-primary text-white p-2 rounded mr-2">
-              <FileText size={20} />
+          <div className="flex items-center gap-3 px-2">
+            <div className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground p-2.5 rounded-lg shadow-lg">
+              <Scissors size={22} className="animate-[spin_3s_ease-in-out_1]" />
             </div>
-            <h1 className="text-xl font-bold text-primary">Mohil ERP</h1>
+            <div className="space-y-1">
+              <h1 className="text-xl font-bold bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
+                Mohil ERP
+              </h1>
+              <p className="text-xs text-muted-foreground">Enterprise Management</p>
+            </div>
           </div>
         </div>
         
         <SidebarGroup>
-          <SidebarGroupLabel>General</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-xs tracking-wider font-semibold">
+            OVERVIEW
+          </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
                   <NavLink 
                     to="/dashboard" 
-                    className={({ isActive }) => isActive ? 'bg-primary/10 text-primary' : ''}
+                    className={({ isActive }) => 
+                      `transition-all duration-200 hover:translate-x-1 ${isActive ? 'bg-primary/10 text-primary font-medium' : ''}`
+                    }
                   >
-                    <Home size={18} />
+                    <LayoutDashboard size={18} />
                     <span>Dashboard</span>
                   </NavLink>
                 </SidebarMenuButton>
@@ -61,7 +67,9 @@ const Sidebar: React.FC = () => {
         </SidebarGroup>
         
         <SidebarGroup>
-          <SidebarGroupLabel>Management</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-xs tracking-wider font-semibold">
+            MANAGEMENT
+          </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {isAdmin && (
@@ -69,9 +77,11 @@ const Sidebar: React.FC = () => {
                   <SidebarMenuButton asChild>
                     <NavLink 
                       to="/employees" 
-                      className={({ isActive }) => isActive ? 'bg-primary/10 text-primary' : ''}
+                      className={({ isActive }) => 
+                        `transition-all duration-200 hover:translate-x-1 ${isActive ? 'bg-primary/10 text-primary font-medium' : ''}`
+                      }
                     >
-                      <User size={18} />
+                      <Users size={18} />
                       <span>Employees</span>
                     </NavLink>
                   </SidebarMenuButton>
@@ -83,7 +93,9 @@ const Sidebar: React.FC = () => {
                   <SidebarMenuButton asChild>
                     <NavLink 
                       to="/workers" 
-                      className={({ isActive }) => isActive ? 'bg-primary/10 text-primary' : ''}
+                      className={({ isActive }) => 
+                        `transition-all duration-200 hover:translate-x-1 ${isActive ? 'bg-primary/10 text-primary font-medium' : ''}`
+                      }
                     >
                       <Users size={18} />
                       <span>Workers</span>
@@ -96,7 +108,9 @@ const Sidebar: React.FC = () => {
                 <SidebarMenuButton asChild>
                   <NavLink 
                     to="/products" 
-                    className={({ isActive }) => isActive ? 'bg-primary/10 text-primary' : ''}
+                    className={({ isActive }) => 
+                      `transition-all duration-200 hover:translate-x-1 ${isActive ? 'bg-primary/10 text-primary font-medium' : ''}`
+                    }
                   >
                     <Scissors size={18} />
                     <span>Products</span>
@@ -108,9 +122,11 @@ const Sidebar: React.FC = () => {
                 <SidebarMenuButton asChild>
                   <NavLink 
                     to="/production" 
-                    className={({ isActive }) => isActive ? 'bg-primary/10 text-primary' : ''}
+                    className={({ isActive }) => 
+                      `transition-all duration-200 hover:translate-x-1 ${isActive ? 'bg-primary/10 text-primary font-medium' : ''}`
+                    }
                   >
-                    <Clock size={18} />
+                    <Calendar size={18} />
                     <span>Production</span>
                   </NavLink>
                 </SidebarMenuButton>
@@ -120,29 +136,21 @@ const Sidebar: React.FC = () => {
         </SidebarGroup>
         
         <SidebarGroup>
-          <SidebarGroupLabel>Reports & Finance</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-xs tracking-wider font-semibold">
+            REPORTS & FINANCE
+          </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
                   <NavLink 
                     to="/reports" 
-                    className={({ isActive }) => isActive ? 'bg-primary/10 text-primary' : ''}
+                    className={({ isActive }) => 
+                      `transition-all duration-200 hover:translate-x-1 ${isActive ? 'bg-primary/10 text-primary font-medium' : ''}`
+                    }
                   >
-                    <BarChart size={18} />
+                    <BarChart2 size={18} />
                     <span>Reports</span>
-                  </NavLink>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <NavLink 
-                    to="/salary" 
-                    className={({ isActive }) => isActive ? 'bg-primary/10 text-primary' : ''}
-                  >
-                    <DollarSign size={18} />
-                    <span>Salary</span>
                   </NavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -152,26 +160,18 @@ const Sidebar: React.FC = () => {
         
         {isAdmin && (
           <SidebarGroup>
-            <SidebarGroupLabel>Administration</SidebarGroupLabel>
+            <SidebarGroupLabel className="text-xs tracking-wider font-semibold">
+              ADMINISTRATION
+            </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
                     <NavLink 
-                      to="/users" 
-                      className={({ isActive }) => isActive ? 'bg-primary/10 text-primary' : ''}
-                    >
-                      <User size={18} />
-                      <span>User Management</span>
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild>
-                    <NavLink 
                       to="/settings" 
-                      className={({ isActive }) => isActive ? 'bg-primary/10 text-primary' : ''}
+                      className={({ isActive }) => 
+                        `transition-all duration-200 hover:translate-x-1 ${isActive ? 'bg-primary/10 text-primary font-medium' : ''}`
+                      }
                     >
                       <Settings size={18} />
                       <span>Settings</span>
@@ -182,6 +182,23 @@ const Sidebar: React.FC = () => {
             </SidebarGroupContent>
           </SidebarGroup>
         )}
+
+        <div className="absolute bottom-4 w-full px-3">
+          <SidebarGroup>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <button className="w-full flex items-center gap-2 text-destructive hover:text-destructive">
+                      <LogOut size={18} />
+                      <span>Logout</span>
+                    </button>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        </div>
       </SidebarContent>
     </SidebarComponent>
   );
