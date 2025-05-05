@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 
 const Sidebar: React.FC = () => {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const isAdmin = user?.role === 'admin';
 
   return (
@@ -88,21 +88,19 @@ const Sidebar: React.FC = () => {
                 </SidebarMenuItem>
               )}
               
-              {!isAdmin && (
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild>
-                    <NavLink 
-                      to="/workers" 
-                      className={({ isActive }) => 
-                        `transition-all duration-200 hover:translate-x-1 ${isActive ? 'bg-primary/10 text-primary font-medium' : ''}`
-                      }
-                    >
-                      <Users size={18} />
-                      <span>Workers</span>
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              )}
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <NavLink 
+                    to="/workers" 
+                    className={({ isActive }) => 
+                      `transition-all duration-200 hover:translate-x-1 ${isActive ? 'bg-primary/10 text-primary font-medium' : ''}`
+                    }
+                  >
+                    <Users size={18} />
+                    <span>Workers</span>
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
               
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
@@ -189,7 +187,10 @@ const Sidebar: React.FC = () => {
               <SidebarMenu>
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
-                    <button className="w-full flex items-center gap-2 text-destructive hover:text-destructive">
+                    <button 
+                      className="w-full flex items-center gap-2 text-destructive hover:text-destructive"
+                      onClick={logout}
+                    >
                       <LogOut size={18} />
                       <span>Logout</span>
                     </button>
