@@ -55,7 +55,7 @@ const Sidebar: React.FC = () => {
         </div>
         
         <SidebarGroup>
-          <SidebarGroupLabel className="text-xs tracking-wider font-semibold">
+          <SidebarGroupLabel className="uppercase font-bold tracking-widest text-sm bg-primary/10 border-l-4 border-primary rounded-r-lg pl-3 py-1.5 text-primary">
             OVERVIEW
           </SidebarGroupLabel>
           <SidebarGroupContent>
@@ -79,7 +79,7 @@ const Sidebar: React.FC = () => {
         </SidebarGroup>
         
         <SidebarGroup>
-          <SidebarGroupLabel className="text-xs tracking-wider font-semibold">
+          <SidebarGroupLabel className="uppercase font-bold tracking-widest text-sm bg-primary/10 border-l-4 border-primary rounded-r-lg pl-3 py-1.5 text-primary">
             MANAGEMENT
           </SidebarGroupLabel>
           <SidebarGroupContent>
@@ -165,7 +165,7 @@ const Sidebar: React.FC = () => {
         </SidebarGroup>
         
         <SidebarGroup>
-          <SidebarGroupLabel className="text-xs tracking-wider font-semibold">
+          <SidebarGroupLabel className="uppercase font-bold tracking-widest text-sm bg-primary/10 border-l-4 border-primary rounded-r-lg pl-3 py-1.5 text-primary">
             REPORTS & FINANCE
           </SidebarGroupLabel>
           <SidebarGroupContent>
@@ -190,7 +190,7 @@ const Sidebar: React.FC = () => {
         
         {isAdmin && (
           <SidebarGroup>
-            <SidebarGroupLabel className="text-xs tracking-wider font-semibold">
+            <SidebarGroupLabel className="uppercase font-bold tracking-widest text-sm bg-primary/10 border-l-4 border-primary rounded-r-lg pl-3 py-1.5 text-primary">
               ADMINISTRATION
             </SidebarGroupLabel>
             <SidebarGroupContent>
