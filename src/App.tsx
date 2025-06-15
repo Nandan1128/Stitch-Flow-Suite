@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -21,6 +20,8 @@ import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
 import Salary from "./pages/Salary";
 import Index from "./pages/Index";
+import AdminProfile from "./pages/AdminProfile";
+import SupervisorProfile from "./pages/SupervisorProfile";
 
 const queryClient = new QueryClient();
 
@@ -49,6 +50,10 @@ const App = () => (
               <Route path="settings" element={<Settings />} />
               <Route path="salary" element={<Salary />} />
             </Route>
+
+            {/* Profile pages under /dashboard for consistency */}
+            <Route path="/dashboard/admin-profile" element={<AdminProfile />} />
+            <Route path="/dashboard/supervisor-profile" element={<SupervisorProfile />} />
 
             {/* Redirect from top-level to dashboard nested route */}
             <Route path="/employees" element={<Navigate to="/dashboard/employees" replace />} />
