@@ -1,10 +1,35 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate, Outlet } from 'react-router-dom';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import Sidebar from './Sidebar';
 import Header from './Header';
+
+// Simple error boundary to keep layout visible even if a child errors
+class LayoutErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean}> {
+  constructor(props: {children: React.ReactNode}) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError(error: any) {
+    return { hasError: true };
+  }
+  componentDidCatch(error: any, info: any) {
+    // You can log this if needed
+    console.error("Layout error boundary caught an error:", error, info);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="flex flex-col items-center justify-center min-h-screen w-full">
+          <div className="mb-2 font-bold text-destructive">Something went wrong in this page.</div>
+          <button className="underline" onClick={()=>window.location.reload()}>Reload</button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 const AppLayout: React.FC = () => {
   const { isAuthenticated, isLoading } = useAuth();
@@ -21,15 +46,20 @@ const AppLayout: React.FC = () => {
     return <Navigate to="/login" />;
   }
 
+  // Diagnostic log for mounting layout
+  console.log("Rendering AppLayout with sidebar and header");
+
   return (
     <SidebarProvider defaultOpen={false}>
       <div className="min-h-screen flex w-full">
         <Sidebar />
         <div className="flex-1 flex flex-col">
           <Header />
-          <main className="flex-1 p-6 overflow-auto bg-gray-50">
-            <Outlet />
-          </main>
+          <LayoutErrorBoundary>
+            <main className="flex-1 p-6 overflow-auto bg-gray-50">
+              <Outlet />
+            </main>
+          </LayoutErrorBoundary>
         </div>
       </div>
     </SidebarProvider>
