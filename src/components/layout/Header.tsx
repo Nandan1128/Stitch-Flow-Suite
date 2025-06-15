@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Link } from 'react-router-dom';
@@ -21,8 +20,8 @@ const Header: React.FC = () => {
         <SidebarTrigger />
         <div className="flex flex-col justify-center">
           <div className="flex items-center gap-2">
-            <span className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground p-2.5 rounded-lg shadow-lg">
-              <Scissors size={28} className="animate-[spin_3s_ease-in-out_1]" />
+            <span className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground p-1.5 rounded-lg shadow-lg">
+              <Scissors size={22} className="animate-[spin_3s_ease-in-out_1]" />
             </span>
             <h1
               className="text-xl font-bold bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent font-sans leading-tight"
@@ -101,4 +100,3 @@ const Header: React.FC = () => {
 };
 
 export default Header;
-
