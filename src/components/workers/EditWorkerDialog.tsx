@@ -53,29 +53,44 @@ export const EditWorkerDialog: React.FC<EditWorkerDialogProps> = ({
           <DialogTitle>Edit Worker</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 mt-2">
-          <Input
-            name="name"
-            label="Worker Name"
-            placeholder="Enter name"
-            value={form.name || ""}
-            onChange={handleChange}
-            required
-          />
-          <Input
-            name="mobileNumber"
-            label="Mobile Number"
-            placeholder="Mobile Number"
-            value={form.mobileNumber || ""}
-            onChange={handleChange}
-            required
-          />
-          <Input
-            name="address"
-            label="Address"
-            placeholder="Address"
-            value={form.address || ""}
-            onChange={handleChange}
-          />
+          <div>
+            <label htmlFor="worker-name" className="block text-sm font-medium text-muted-foreground mb-1">
+              Worker Name
+            </label>
+            <Input
+              id="worker-name"
+              name="name"
+              placeholder="Enter name"
+              value={form.name || ""}
+              onChange={handleChange}
+              required
+            />
+          </div>
+          <div>
+            <label htmlFor="worker-mobile" className="block text-sm font-medium text-muted-foreground mb-1">
+              Mobile Number
+            </label>
+            <Input
+              id="worker-mobile"
+              name="mobileNumber"
+              placeholder="Mobile Number"
+              value={form.mobileNumber || ""}
+              onChange={handleChange}
+              required
+            />
+          </div>
+          <div>
+            <label htmlFor="worker-address" className="block text-sm font-medium text-muted-foreground mb-1">
+              Address
+            </label>
+            <Input
+              id="worker-address"
+              name="address"
+              placeholder="Address"
+              value={form.address || ""}
+              onChange={handleChange}
+            />
+          </div>
           {/* Add more fields as needed */}
           <DialogFooter>
             <Button type="submit">Save</Button>
