@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -92,14 +93,14 @@ export default function Index() {
             {HOW_WE_WORK.map((step, idx) => (
               <Card
                 key={step.title}
-                className={`shadow-xl transition-all duration-300 bg-white/80 hover:bg-accent/10 border-2 hover:border-accent/70 hover:-translate-y-2 animate-scale-in`}
+                className={`shadow-xl transition-all duration-300 bg-white hover:bg-accent/10 border-2 hover:border-accent/70 hover:-translate-y-2 animate-scale-in`}
                 style={{ animationDelay: `${180 + idx * 60}ms` } as React.CSSProperties}
               >
                 <CardContent className="flex flex-col items-center p-6">
                   <span className="bg-primary/10 border-2 border-primary/30 rounded-xl px-4 py-2 font-semibold text-primary mb-3 text-base">
                     {step.title}
                   </span>
-                  <span className="text-muted-foreground text-[15px] text-center">{step.text}</span>
+                  <span className="text-muted-foreground text-[15px] text-center font-medium">{step.text}</span>
                 </CardContent>
               </Card>
             ))}
