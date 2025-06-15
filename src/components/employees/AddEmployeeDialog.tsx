@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -21,6 +20,8 @@ const formSchema = z.object({
   name: z.string().min(3, "Name must be at least 3 characters"),
   employeeId: z.string().min(3, "Employee ID must be at least 3 characters"),
   address: z.string().min(5, "Address must be at least 5 characters"),
+  permanentAddress: z.string().optional().nullable(),
+  currentAddress: z.string().optional().nullable(),
   mobileNumber: z.string().min(10, "Mobile number must be at least 10 digits"),
   emergencyNumber: z.string().min(10, "Emergency number must be at least 10 digits"),
   idProof: z.string().min(5, "ID proof must be at least 5 characters"),
@@ -64,6 +65,8 @@ export const AddEmployeeDialog: React.FC<AddEmployeeDialogProps> = ({
       name: "",
       employeeId: "",
       address: "",
+      permanentAddress: "",
+      currentAddress: "",
       mobileNumber: "",
       emergencyNumber: "",
       idProof: "",
@@ -76,26 +79,23 @@ export const AddEmployeeDialog: React.FC<AddEmployeeDialogProps> = ({
   });
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
-    // Create a new employee object with the form values
-    // Fix: Explicitly define all required properties as non-optional
     const newEmployee: Employee = {
-      id: Math.random().toString(36).substring(2, 11), // Simple ID generation for mock data
+      id: Math.random().toString(36).substring(2, 11),
       name: values.name,
       employeeId: values.employeeId,
       address: values.address,
       mobileNumber: values.mobileNumber,
       emergencyNumber: values.emergencyNumber,
       idProof: values.idProof,
-      idProofImageUrl: idProofPreview || '/placeholder.svg', // Use preview URL or default placeholder
+      idProofImageUrl: idProofPreview || '/placeholder.svg',
       bankAccountDetail: values.bankAccountDetail,
-      bankImageUrl: bankImagePreview || '/placeholder.svg', // Use preview URL or default placeholder
+      bankImageUrl: bankImagePreview || '/placeholder.svg',
       salary: values.salary,
       isActive: values.isActive,
       createdBy: 'admin',
       createdAt: new Date(),
-      // Include optional fields if they exist
-      permanentAddress: values.permanentAddress,
-      currentAddress: values.currentAddress
+      permanentAddress: values.permanentAddress || "",
+      currentAddress: values.currentAddress || ""
     };
 
     onAddEmployee(newEmployee);

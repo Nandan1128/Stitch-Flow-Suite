@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus, Search, Scissors } from "lucide-react";
@@ -262,7 +261,6 @@ const ProductionPage: React.FC = () => {
         onOpenChange={setIsOperationsDialogOpen}
         production={selectedProduction}
         onUpdateProduction={handleUpdateProduction}
-        availableWorkers={mockWorkers}
       />
     </div>
   );
