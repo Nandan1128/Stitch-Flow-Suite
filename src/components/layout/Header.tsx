@@ -58,7 +58,7 @@ const Header: React.FC = () => {
                       <Settings size={16} />
                       <span>Settings</span>
                     </Link>
-                  </Link>
+                  </DropdownMenuItem>
                 )}
                 <DropdownMenuItem 
                   onClick={logout}
