@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Link } from 'react-router-dom';
@@ -42,20 +43,24 @@ const Header: React.FC = () => {
             <DropdownMenuTrigger asChild>
               <button
                 className={`
-                  flex items-center gap-2 px-4 py-2 rounded-xl
-                  bg-gradient-to-r from-primary via-secondary to-accent
-                  text-white font-semibold shadow-md border-2 border-primary
-                  hover:from-accent hover:to-secondary
-                  focus:outline-none focus:ring-2 focus:ring-primary/60
+                  flex items-center gap-2 px-4 py-2 rounded-lg
+                  bg-gradient-to-r from-mohil-100 via-mohil-400 to-mohil-200
+                  text-mohil-800 font-semibold border border-mohil-300
+                  hover:from-mohil-200 hover:to-mohil-100
+                  focus:outline-none focus:ring-2 focus:ring-mohil-400/60
                   transition-all duration-200
                   group
+                  shadow-sm
                 `}
+                style={{
+                  minHeight: "40px"
+                }}
               >
-                <span className="flex items-center justify-center bg-white/30 rounded-full p-1">
-                  <User size={20} className="text-white group-hover:text-primary" />
+                <span className="flex items-center justify-center bg-white/20 rounded-full p-1">
+                  <User size={20} className="text-mohil-800 group-hover:text-primary" />
                 </span>
                 <span className="text-sm font-bold drop-shadow">{user.name}</span>
-                <span className="ml-2 text-xs bg-white/10 rounded px-2 py-0.5 capitalize font-semibold">
+                <span className="ml-2 text-xs bg-mohil-100 text-mohil-800 rounded px-2 py-0.5 capitalize font-semibold">
                   {user.role}
                 </span>
               </button>
@@ -100,3 +105,4 @@ const Header: React.FC = () => {
 };
 
 export default Header;
+
