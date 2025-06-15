@@ -12,6 +12,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { User, Settings, LogOut } from 'lucide-react';
 
+const LOGO_SRC = "https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=48&q=80";
+
 const Header: React.FC = () => {
   const { user, logout } = useAuth();
 
@@ -20,15 +22,22 @@ const Header: React.FC = () => {
       <div className="flex items-center gap-4">
         <SidebarTrigger />
         <div className="flex flex-col justify-center">
-          <h1
-            className="text-xl font-bold bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent font-sans leading-tight"
-            style={{
-              // The font matches sidebar, if you wish to use another like 'playfair', set up accordingly in tailwind
-              margin: 0,
-            }}
-          >
-            StitchFlow Suite
-          </h1>
+          <div className="flex items-center gap-2">
+            <img
+              src={LOGO_SRC}
+              alt="StitchFlow Suite Logo"
+              className="h-8 w-8 rounded-xl shadow-lg object-cover border border-border"
+            />
+            <h1
+              className="text-xl font-bold bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent font-sans leading-tight"
+              style={{
+                // The font matches sidebar, if you wish to use another like 'playfair', set up accordingly in tailwind
+                margin: 0,
+              }}
+            >
+              StitchFlow Suite
+            </h1>
+          </div>
           <span className="text-xs text-muted-foreground">ERP Management</span>
         </div>
       </div>
