@@ -69,7 +69,7 @@ export default function Index() {
             {COMPANY_MOTTO}
           </h1>
           <p className="text-lg md:text-xl font-medium text-white/90 text-center max-w-xl bg-black/40 rounded-lg px-4 py-2 mb-2 shadow-lg animate-fade-in [--animation-delay:400ms]">
-            Mohil ERP delivers technology-driven solutions for seamless clothing production, delivering efficiency and reliability from design to delivery.
+            StitchFlow Suite delivers technology-driven solutions for seamless clothing production, delivering efficiency and reliability from design to delivery.
           </p>
           <Button
             variant="secondary"
