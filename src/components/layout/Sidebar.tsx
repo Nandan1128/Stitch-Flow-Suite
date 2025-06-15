@@ -47,9 +47,9 @@ const Sidebar: React.FC = () => {
             </div>
             <div className="space-y-1">
               <h1 className="text-xl font-bold bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
-                Mohil ERP
+                StitchFlow Suite
               </h1>
-              <p className="text-xs text-muted-foreground">Enterprise Management</p>
+              <p className="text-xs text-muted-foreground">Seamless ERP Management</p>
             </div>
           </div>
         </div>
