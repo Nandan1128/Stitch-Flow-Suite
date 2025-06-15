@@ -50,11 +50,11 @@ export default function Index() {
         />
         <div className="absolute inset-0 bg-gradient-to-tr from-primary/80 via-black/40 to-accent/50 opacity-80" />
         <header className="relative z-10 container mx-auto px-4 pt-8 pb-2 flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="flex items-center gap-3 bg-white/30 backdrop-blur-md p-2 rounded-xl shadow">
+          <div className="flex items-center gap-3 bg-white/80 backdrop-blur-md p-2 rounded-xl shadow-lg">
             <span className="bg-primary/20 rounded-full p-3">
               <Home size={32} className="text-primary" />
             </span>
-            <span className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-primary via-secondary to-accent text-transparent bg-clip-text drop-shadow">StitchFlow Suite</span>
+            <span className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-primary via-secondary to-accent text-transparent bg-clip-text drop-shadow-2xl">StitchFlow Suite</span>
           </div>
           {/* Only the Login button remains in the nav */}
           <nav className="flex gap-2 bg-white/30 backdrop-blur-md p-2 rounded-xl shadow">
