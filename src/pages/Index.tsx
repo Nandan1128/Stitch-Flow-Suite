@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -55,7 +54,7 @@ export default function Index() {
             <span className="bg-primary/20 rounded-full p-3">
               <Home size={32} className="text-primary" />
             </span>
-            <span className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-primary via-secondary to-accent text-transparent bg-clip-text drop-shadow">Mohil Enterprise</span>
+            <span className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-primary via-secondary to-accent text-transparent bg-clip-text drop-shadow">StitchFlow Suite</span>
           </div>
           {/* Only the Login button remains in the nav */}
           <nav className="flex gap-2 bg-white/30 backdrop-blur-md p-2 rounded-xl shadow">

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -46,7 +45,7 @@ const Login = () => {
           </div>
           <h1 className="text-4xl font-bold text-gray-900 tracking-tight">
             <span className="bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
-              Mohil Enterprise
+              StitchFlow Suite
             </span>
           </h1>
           <p className="text-gray-600 mt-2 text-lg">Enterprise Resource Planning System</p>
