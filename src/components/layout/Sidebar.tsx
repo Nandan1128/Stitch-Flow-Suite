@@ -70,7 +70,7 @@ const Sidebar: React.FC = () => {
                     }
                   >
                     <LayoutDashboard size={18} />
-                    <span>Dashboard</span>
+                    <span className="text-primary">Dashboard</span>
                   </NavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -95,7 +95,7 @@ const Sidebar: React.FC = () => {
                       }
                     >
                       <Users size={18} />
-                      <span>Employees</span>
+                      <span className="text-primary">Employees</span>
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -111,7 +111,7 @@ const Sidebar: React.FC = () => {
                     }
                   >
                     <Users size={18} />
-                    <span>Workers</span>
+                    <span className="text-primary">Workers</span>
                   </NavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -126,7 +126,7 @@ const Sidebar: React.FC = () => {
                     }
                   >
                     <Scissors size={18} />
-                    <span>Products</span>
+                    <span className="text-primary">Products</span>
                   </NavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -141,7 +141,7 @@ const Sidebar: React.FC = () => {
                     }
                   >
                     <Calendar size={18} />
-                    <span>Production</span>
+                    <span className="text-primary">Production</span>
                   </NavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -156,7 +156,7 @@ const Sidebar: React.FC = () => {
                     }
                   >
                     <DollarSign size={18} />
-                    <span>Salary</span>
+                    <span className="text-primary">Salary</span>
                   </NavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -180,7 +180,7 @@ const Sidebar: React.FC = () => {
                     }
                   >
                     <BarChart2 size={18} />
-                    <span>Reports</span>
+                    <span className="text-primary">Reports</span>
                   </NavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -205,7 +205,7 @@ const Sidebar: React.FC = () => {
                       }
                     >
                       <Settings size={18} />
-                      <span>Settings</span>
+                      <span className="text-primary">Settings</span>
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -225,7 +225,7 @@ const Sidebar: React.FC = () => {
                       onClick={logout}
                     >
                       <LogOut size={18} />
-                      <span>Logout</span>
+                      <span className="text-primary">Logout</span>
                     </button>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
