@@ -42,20 +42,20 @@ const Sidebar: React.FC = () => {
       <SidebarContent>
         <div className="px-3 py-4">
           <div className="flex items-center gap-3 px-2">
-            <div className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground p-2.5 rounded-lg shadow-lg">
-              <Scissors size={22} className="animate-[spin_3s_ease-in-out_1]" />
+            <div className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground p-2.5 rounded-lg shadow-lg animate-move-horizontal">
+              <Scissors size={22} />
             </div>
             <div className="space-y-1">
-              <h1 className="text-xl font-bold bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
-                Mohil ERP
+              <h1 className="text-xl font-bold bg-gradient-to-r from-[#065f46] via-[#1e3a8a] to-[#ea580c] bg-clip-text text-transparent">
+                StitchFlow Suite
               </h1>
-              <p className="text-xs text-muted-foreground">Enterprise Management</p>
+              <p className="text-xs text-muted-foreground">Seamless ERP Management</p>
             </div>
           </div>
         </div>
         
         <SidebarGroup>
-          <SidebarGroupLabel className="text-xs tracking-wider font-semibold">
+          <SidebarGroupLabel className="uppercase font-bold tracking-widest text-sm text-black pl-3 py-1.5">
             OVERVIEW
           </SidebarGroupLabel>
           <SidebarGroupContent>
@@ -70,7 +70,7 @@ const Sidebar: React.FC = () => {
                     }
                   >
                     <LayoutDashboard size={18} />
-                    <span>Dashboard</span>
+                    <span className="text-primary">Dashboard</span>
                   </NavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -79,7 +79,7 @@ const Sidebar: React.FC = () => {
         </SidebarGroup>
         
         <SidebarGroup>
-          <SidebarGroupLabel className="text-xs tracking-wider font-semibold">
+          <SidebarGroupLabel className="uppercase font-bold tracking-widest text-sm text-black pl-3 py-1.5">
             MANAGEMENT
           </SidebarGroupLabel>
           <SidebarGroupContent>
@@ -95,7 +95,7 @@ const Sidebar: React.FC = () => {
                       }
                     >
                       <Users size={18} />
-                      <span>Employees</span>
+                      <span className="text-primary">Employees</span>
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -111,7 +111,7 @@ const Sidebar: React.FC = () => {
                     }
                   >
                     <Users size={18} />
-                    <span>Workers</span>
+                    <span className="text-primary">Workers</span>
                   </NavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -126,7 +126,7 @@ const Sidebar: React.FC = () => {
                     }
                   >
                     <Scissors size={18} />
-                    <span>Products</span>
+                    <span className="text-primary">Products</span>
                   </NavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -141,7 +141,7 @@ const Sidebar: React.FC = () => {
                     }
                   >
                     <Calendar size={18} />
-                    <span>Production</span>
+                    <span className="text-primary">Production</span>
                   </NavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -156,7 +156,7 @@ const Sidebar: React.FC = () => {
                     }
                   >
                     <DollarSign size={18} />
-                    <span>Salary</span>
+                    <span className="text-primary">Salary</span>
                   </NavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -165,7 +165,7 @@ const Sidebar: React.FC = () => {
         </SidebarGroup>
         
         <SidebarGroup>
-          <SidebarGroupLabel className="text-xs tracking-wider font-semibold">
+          <SidebarGroupLabel className="uppercase font-bold tracking-widest text-sm text-black pl-3 py-1.5">
             REPORTS & FINANCE
           </SidebarGroupLabel>
           <SidebarGroupContent>
@@ -180,7 +180,7 @@ const Sidebar: React.FC = () => {
                     }
                   >
                     <BarChart2 size={18} />
-                    <span>Reports</span>
+                    <span className="text-primary">Reports</span>
                   </NavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -190,7 +190,7 @@ const Sidebar: React.FC = () => {
         
         {isAdmin && (
           <SidebarGroup>
-            <SidebarGroupLabel className="text-xs tracking-wider font-semibold">
+            <SidebarGroupLabel className="uppercase font-bold tracking-widest text-sm text-black pl-3 py-1.5">
               ADMINISTRATION
             </SidebarGroupLabel>
             <SidebarGroupContent>
@@ -205,7 +205,7 @@ const Sidebar: React.FC = () => {
                       }
                     >
                       <Settings size={18} />
-                      <span>Settings</span>
+                      <span className="text-primary">Settings</span>
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -225,7 +225,7 @@ const Sidebar: React.FC = () => {
                       onClick={logout}
                     >
                       <LogOut size={18} />
-                      <span>Logout</span>
+                      <span className="text-primary">Logout</span>
                     </button>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

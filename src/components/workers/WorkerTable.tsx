@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Clipboard, Edit, MoreVertical, Eye } from "lucide-react";
 import { WorkerDetailsSheet } from './WorkerDetailsSheet';
 import { WorkerOperationsDialog } from './WorkerOperationsDialog';
+import { EditWorkerDialog } from './EditWorkerDialog';
 import { Worker } from '@/types/worker';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
@@ -34,6 +35,7 @@ export const WorkerTable: React.FC<WorkerTableProps> = ({
   const [selectedWorker, setSelectedWorker] = useState<Worker | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isOperationsOpen, setIsOperationsOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
 
   const handleOpenDetails = (worker: Worker) => {
     setSelectedWorker(worker);
@@ -43,6 +45,11 @@ export const WorkerTable: React.FC<WorkerTableProps> = ({
   const handleOpenOperations = (worker: Worker) => {
     setSelectedWorker(worker);
     setIsOperationsOpen(true);
+  };
+
+  const handleOpenEdit = (worker: Worker) => {
+    setSelectedWorker(worker);
+    setIsEditOpen(true);
   };
 
   return (
@@ -96,7 +103,7 @@ export const WorkerTable: React.FC<WorkerTableProps> = ({
                         <Clipboard className="mr-2 h-4 w-4" />
                         View Operations
                       </DropdownMenuItem>
-                      <DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleOpenEdit(worker)}>
                         <Edit className="mr-2 h-4 w-4" />
                         Edit Worker
                       </DropdownMenuItem>
@@ -121,6 +128,12 @@ export const WorkerTable: React.FC<WorkerTableProps> = ({
             workerName={selectedWorker.name}
             open={isOperationsOpen}
             onOpenChange={setIsOperationsOpen}
+          />
+          <EditWorkerDialog
+            open={isEditOpen}
+            onOpenChange={setIsEditOpen}
+            worker={selectedWorker}
+            onUpdate={onUpdateWorker}
           />
         </>
       )}

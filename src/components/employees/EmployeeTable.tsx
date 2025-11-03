@@ -40,6 +40,11 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = ({
     setIsDetailsSheetOpen(true);
   };
 
+  const handleViewClick = (employee: Employee) => {
+    setSelectedEmployee(employee);
+    setIsDetailsSheetOpen(true);
+  };
+
   if (employees.length === 0) {
     return (
       <div className="text-center p-6 bg-gray-50 rounded-lg">
@@ -85,7 +90,7 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = ({
                 <TableCell>{formatDistanceToNow(new Date(employee.createdAt), { addSuffix: true })}</TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2">
-                    <Button variant="outline" size="icon" title="View Details">
+                    <Button variant="outline" size="icon" title="View Details" onClick={() => handleViewClick(employee)}>
                       <Eye className="h-4 w-4" />
                     </Button>
                     <Button 

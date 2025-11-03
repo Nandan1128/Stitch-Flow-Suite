@@ -1,11 +1,10 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { FileText, LogIn } from 'lucide-react';
+import { FileText, LogIn, ArrowLeft } from 'lucide-react';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -30,13 +29,23 @@ const Login = () => {
       </div>
 
       <div className="relative z-10 w-full max-w-md px-4">
+        {/* Back to Home Button */}
+        <Button
+          variant="ghost"
+          size="sm"
+          className="mb-3 flex items-center gap-2 text-muted-foreground hover:text-primary"
+          onClick={() => navigate('/')}
+        >
+          <ArrowLeft size={18} />
+          Home
+        </Button>
         <div className="text-center mb-8 animate-fade-in">
           <div className="inline-block p-4 bg-primary rounded-2xl mb-3 shadow-xl hover:shadow-primary/25 transition-shadow">
             <FileText size={36} className="text-white animate-scale-in" />
           </div>
           <h1 className="text-4xl font-bold text-gray-900 tracking-tight">
             <span className="bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
-              Mohil Enterprise
+              StitchFlow Suite
             </span>
           </h1>
           <p className="text-gray-600 mt-2 text-lg">Enterprise Resource Planning System</p>
@@ -103,14 +112,6 @@ const Login = () => {
             </CardFooter>
           </form>
         </Card>
-        
-        <div className="mt-8 text-center text-sm space-y-2 animate-fade-in [--animation-delay:200ms]">
-          <p className="text-gray-600 font-medium">Demo Credentials:</p>
-          <div className="space-y-1 text-gray-500">
-            <p>Admin: admin@mohil.com / admin123</p>
-            <p>Supervisor: supervisor@mohil.com / supervisor123</p>
-          </div>
-        </div>
       </div>
     </div>
   );
