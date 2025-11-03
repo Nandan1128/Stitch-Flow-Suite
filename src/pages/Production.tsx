@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { ProductionTable } from "@/components/production/ProductionTable";
 import { AddProductionDialog } from "@/components/production/AddProductionDialog";
 import { EditProductionDialog } from "@/components/production/EditProductionDialog";
-import { ProductionOperationsDialog } from "@/components/production/ProductionOperationsDialog";
+import ProductionOperationsDialog from "@/components/production/ProductionOperationsDialog";
 import { Production, WorkerAssignment } from '@/types/production';
 import { useToast } from '@/hooks/use-toast';
 import { WorkerSalary } from '@/types/salary';
@@ -260,9 +260,9 @@ const ProductionPage: React.FC = () => {
       <ProductionOperationsDialog
         open={isOperationsDialogOpen}
         onOpenChange={setIsOperationsDialogOpen}
-        production={selectedProduction}
-        onUpdateProduction={handleUpdateProduction}
-      />
+        production={selectedProduction} availableWorkers={[]} onAssignWorker={function (productionId: string, operationId: string, workerId: string): void {
+          throw new Error('Function not implemented.');
+        } }      />
     </div>
   );
 };
