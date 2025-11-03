@@ -246,6 +246,7 @@ const ProductionPage: React.FC = () => {
         open={isAddDialogOpen} 
         onOpenChange={setIsAddDialogOpen}
         onAddProduction={handleAddProduction}
+        availableWorkers={mockWorkers}
       />
 
       <EditProductionDialog 
