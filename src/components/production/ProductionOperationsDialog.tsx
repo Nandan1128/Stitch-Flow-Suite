@@ -27,13 +27,13 @@ const ProductionOperationsDialog: React.FC<ProductionOperationsDialogProps> = ({
             <div key={operation.id} className="mb-4">
               <h3 className="text-lg">{operation.name}</h3>
               <Select
-                onValueChange={(workerId) => onAssignWorker(production.id, operation.id, workerId)}
-                value={operation.assignedWorkerId || ''}
+                onValueChange={(workerId) => onAssignWorker(production.id, operation.id, workerId === "none" ? "" : workerId)}
+                value={operation.assignedWorkerId || 'none'}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select a worker" />
                 </SelectTrigger>
-                <SelectItem value="">None</SelectItem>
+                <SelectItem value="none">None</SelectItem>
                 {availableWorkers.map((worker) => (
                   <SelectItem key={worker.id} value={worker.id}>
                     {worker.name}

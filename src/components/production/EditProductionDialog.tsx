@@ -345,8 +345,8 @@ export const EditProductionDialog: React.FC<EditProductionDialogProps> = ({
                         <FormItem>
                           <FormLabel>Assigned Worker</FormLabel>
                           <Select
-                            value={field.value}
-                            onValueChange={field.onChange}
+                            value={field.value || "none"}
+                            onValueChange={(value) => field.onChange(value === "none" ? undefined : value)}
                           >
                             <FormControl>
                               <SelectTrigger className="w-[180px]">
@@ -354,7 +354,7 @@ export const EditProductionDialog: React.FC<EditProductionDialogProps> = ({
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="">None</SelectItem>
+                              <SelectItem value="none">None</SelectItem>
                               {availableWorkers.map(worker => (
                                 <SelectItem key={worker.id} value={worker.id}>
                                   {worker.name}
