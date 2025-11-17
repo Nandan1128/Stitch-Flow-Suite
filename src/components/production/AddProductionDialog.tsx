@@ -361,8 +361,8 @@ export const AddProductionDialog: React.FC<AddProductionDialogProps> = ({
                         <FormItem>
                           <FormLabel>Assigned Worker</FormLabel>
                           <Select
-                            value={field.value}
-                            onValueChange={field.onChange}
+                            value={field.value ?? "none"}
+                            onValueChange={(value) => field.onChange(value === "none" ? undefined : value)}
                           >
                             <FormControl>
                               <SelectTrigger className="w-[180px]">
