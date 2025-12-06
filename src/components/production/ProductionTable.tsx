@@ -55,9 +55,7 @@ export const ProductionTable: React.FC<ProductionTableProps> = ({
               <TableCell>{production.total_fabric} mtr.</TableCell>
               <TableCell>{production.average}</TableCell>
               <TableCell>{production.total_quantity} pcs</TableCell>
-              <TableCell> {Array.isArray(production.operations)
-    ? production.operations.length
-    : 0}</TableCell>
+              <TableCell> {production.operationsCount ?? 0}</TableCell>
               <TableCell className="text-right space-x-2">
                 <Button
                   variant="outline"

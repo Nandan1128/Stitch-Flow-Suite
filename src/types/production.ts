@@ -42,6 +42,7 @@ export interface Production {
   // UI only (NOT stored in DB)
   productName: string;
   operations: ProductionOperation[];   // fetched separately
+  operationsCount?: number;           // count of operations
 }
 
 // ----------------------

@@ -19,41 +19,60 @@ export const getProducts = async () => {
  * We'll fetch products separately and map so code is robust if FK relationship name differs.
  */
 export const getProductions = async () => {
-  const { data, error } = await supabase
+  // 1) fetch productions
+  const { data: prodData, error: prodError } = await supabase
     .from("production")
-    .select(`
-      *,
-      production_operation:production_operation (
-        id,
-        operation_id,
-        worker_id,
-        worker_name,
-        pieces_done,
-        earnings,
-        date
-      )
-    `)
+    .select("*")
     .order("created_at", { ascending: false });
 
-  if (error) throw error;
-  const productions = data ?? [];
+  if (prodError) throw prodError;
+  const productions = prodData ?? [];
 
-  // fetch products for mapping product name (avoid N+1 queries)
-  try {
-    const { data: products } = await supabase.from("products").select("id,name");
-    const prodMap: Record<string, string> = {};
-    (products || []).forEach((p: any) => {
-      if (p && p.id) prodMap[p.id] = p.name;
-    });
-
-    return productions.map((p: any) => ({
-      ...p,
-      productName: p.product_id ? prodMap[p.product_id] ?? null : null,
-    }));
-  } catch (err) {
-    // if product fetching fails, return productions without productName
-    return productions;
+  if (productions.length === 0) {
+    return [];
   }
+
+  // 2) collect product_ids used by these productions
+  const productIds = Array.from(
+    new Set(productions.map((p: any) => p.product_id).filter(Boolean))
+  );
+
+  // 3) fetch product names (if you want productName)
+  const { data: products } = await supabase
+    .from("products")
+    .select("id,name")
+    .in("id", productIds.length ? productIds : ["-none-"]); // avoid empty IN
+  const prodMap: Record<string, string> = {};
+  (products || []).forEach((p: any) => {
+    if (p?.id) prodMap[p.id] = p.name;
+  });
+
+  // 4) fetch operation counts grouped by product_id from operations table
+  //    PostgREST supports select with aggregate via `select('product_id, count(*)')` only when using views or RPC.
+  //    Simpler: ask operations where product_id in (...) and aggregate client-side
+  let opCounts: Record<string, number> = {};
+  if (productIds.length > 0) {
+    const { data: ops, error: opsErr } = await supabase
+      .from("operations")
+      .select("id, product_id") // fetch rows, we'll count per product_id
+      .in("product_id", productIds);
+
+    if (!opsErr && Array.isArray(ops)) {
+      opCounts = ops.reduce((acc: Record<string, number>, row: any) => {
+        const pid = row.product_id;
+        if (!pid) return acc;
+        acc[pid] = (acc[pid] || 0) + 1;
+        return acc;
+      }, {});
+    }
+  }
+
+  // 5) map production with productName and operationsCount
+  return productions.map((p: any) => ({
+    ...p,
+    productName: p.product_id ? prodMap[p.product_id] ?? null : null,
+    operationsCount: p.product_id ? (opCounts[p.product_id] || 0) : 0,
+  }));
 };
 
 

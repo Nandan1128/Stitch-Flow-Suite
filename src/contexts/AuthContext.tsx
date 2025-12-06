@@ -1,25 +1,14 @@
-
-import React, { createContext, useState, useContext, ReactNode } from 'react';
+import React, {
+  createContext,
+  useState,
+  useContext,
+  ReactNode,
+  useEffect,
+} from "react";
 import { useToast } from "@/components/ui/use-toast";
-import { User, LoginCredentials, AuthState, UserRole } from '@/types/auth';
-
-// Mock data for demonstration
-const mockUsers = [
-  {
-    id: '1',
-    name: 'Admin User',
-    email: 'admin@mohil.com',
-    password: 'admin123',
-    role: 'admin' as UserRole
-  },
-  {
-    id: '2',
-    name: 'Supervisor User',
-    email: 'supervisor@mohil.com',
-    password: 'supervisor123',
-    role: 'supervisor' as UserRole
-  }
-];
+import { supabase } from "@/Config/supabaseClient";
+import bcrypt from "bcryptjs";
+import { User, LoginCredentials, AuthState, UserRole } from "@/types/auth";
 
 interface AuthContextType {
   user: User | null;
@@ -27,140 +16,177 @@ interface AuthContextType {
   isLoading: boolean;
   login: (credentials: LoginCredentials) => Promise<boolean>;
   logout: () => void;
-  registerSupervisor: (name: string, email: string, password: string) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+export const AuthProvider: React.FC<{ children: ReactNode }> = ({
+  children,
+}) => {
+  const { toast } = useToast();
+
   const [authState, setAuthState] = useState<AuthState>({
     user: null,
     isAuthenticated: false,
-    isLoading: false
+    isLoading: false,
   });
-  const { toast } = useToast();
 
-  const login = async (credentials: LoginCredentials): Promise<boolean> => {
-    setAuthState(prev => ({ ...prev, isLoading: true }));
-    
-    // Simulate API call
+  // Load user session when app starts
+  useEffect(() => {
+    const storedUser = localStorage.getItem("session_user");
+    if (storedUser) {
+      setAuthState({
+        user: JSON.parse(storedUser),
+        isAuthenticated: true,
+        isLoading: false,
+      });
+    }
+  }, []);
+
+  // ⭐ LOGIN FUNCTION
+  const login = async ({
+    email,
+    password,
+  }: LoginCredentials): Promise<boolean> => {
+    setAuthState((prev) => ({ ...prev, isLoading: true }));
+
+
     try {
-      // For demo purposes, find the user in our mock data
-      const user = mockUsers.find(
-        u => u.email === credentials.email && u.password === credentials.password
-      );
-      
-      if (user) {
-        // Create a User object without the password
-        const authenticatedUser: User = {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          role: user.role
-        };
-        
-        setAuthState({
-          user: authenticatedUser,
-          isAuthenticated: true,
-          isLoading: false
-        });
-        
+      // Fetch user from app_users table
+      const { data: userRow, error } = await supabase
+        .from("app_users")
+        .select("*")
+        .eq("email", email)
+        .single();
+
+
+
+      if (error || !userRow) {
         toast({
-          title: "Login successful",
-          description: `Welcome back, ${user.name}!`,
-        });
-        
-        return true;
-      } else {
-        setAuthState(prev => ({ ...prev, isLoading: false }));
-        
-        toast({
-          title: "Login failed",
+          title: "Login Failed",
           description: "Invalid email or password",
-          variant: "destructive"
+          variant: "destructive",
         });
-        
+
+        setAuthState((prev) => ({ ...prev, isLoading: false }));
         return false;
       }
-    } catch (error) {
-      setAuthState(prev => ({ ...prev, isLoading: false }));
-      
-      toast({
-        title: "Login error",
-        description: "There was a problem logging in",
-        variant: "destructive"
+
+      // check whether user is active
+      if (userRow.employee_id) {
+        const { data: employee, error: empErr } = await supabase
+          .from("employees")
+          .select("is_active")
+          .eq("id", userRow.employee_id)
+          .single();
+
+        if (empErr || !employee) {
+          toast({
+            title: "Login Failed",
+            description: "Account data not found",
+            variant: "destructive",
+          });
+          setAuthState((prev) => ({ ...prev, isLoading: false }));
+          return false;
+        }
+
+        if (employee.is_active === false) {
+          toast({
+            title: "Access Denied",
+            description: "Your account has been deactivated. Contact admin.",
+            variant: "destructive",
+          });
+          setAuthState((prev) => ({ ...prev, isLoading: false }));
+          return false;
+        }
+      }
+
+      // Compare password using bcryptjs
+      const isMatch = await bcrypt.compare(
+        password,
+        userRow.password_hash || ""
+      );
+
+      if (!isMatch) {
+        toast({
+          title: "Login Failed",
+          description: "Incorrect password",
+          variant: "destructive",
+        });
+
+        setAuthState((prev) => ({ ...prev, isLoading: false }));
+        return false;
+      }
+
+      // Build logged-in user object
+      const authenticatedUser: User = {
+        id: userRow.id,
+        name: userRow.username,
+        email: userRow.email,
+        role: userRow.role as UserRole,
+        employee_id: userRow.employee_id,
+      };
+
+      // Save session to localStorage
+      localStorage.setItem("session_user", JSON.stringify(authenticatedUser));
+
+      setAuthState({
+        user: authenticatedUser,
+        isAuthenticated: true,
+        isLoading: false,
       });
-      
+
+      toast({
+        title: "Login Successful",
+        description: `Welcome back!`,
+      });
+
+      return true;
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: "Something went wrong during login",
+        variant: "destructive",
+      });
+      setAuthState((prev) => ({ ...prev, isLoading: false }));
       return false;
     }
   };
 
+  // ⭐ LOGOUT FUNCTION
   const logout = () => {
+    localStorage.removeItem("session_user");
+
     setAuthState({
       user: null,
       isAuthenticated: false,
-      isLoading: false
+      isLoading: false,
     });
-    
+
     toast({
       title: "Logged out",
       description: "You have been logged out successfully",
     });
   };
 
-  const registerSupervisor = async (name: string, email: string, password: string): Promise<boolean> => {
-    // Check if the current user is an admin
-    if (authState.user?.role !== 'admin') {
-      toast({
-        title: "Permission denied",
-        description: "Only admins can register supervisors",
-        variant: "destructive"
-      });
-      return false;
-    }
-
-    setAuthState(prev => ({ ...prev, isLoading: true }));
-    
-    // Simulate API call to register supervisor
-    try {
-      // For demo purposes, we'll just show a success message
-      // In a real app, this would add to the database
-      toast({
-        title: "Supervisor registered",
-        description: `${name} has been registered as a supervisor`,
-      });
-      
-      setAuthState(prev => ({ ...prev, isLoading: false }));
-      return true;
-    } catch (error) {
-      setAuthState(prev => ({ ...prev, isLoading: false }));
-      
-      toast({
-        title: "Registration error",
-        description: "There was a problem registering the supervisor",
-        variant: "destructive"
-      });
-      
-      return false;
-    }
-  };
-
-  const value = {
-    user: authState.user,
-    isAuthenticated: authState.isAuthenticated,
-    isLoading: authState.isLoading,
-    login,
-    logout,
-    registerSupervisor
-  };
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider
+      value={{
+        user: authState.user,
+        isAuthenticated: authState.isAuthenticated,
+        isLoading: authState.isLoading,
+        login,
+        logout,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
 };
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
+  if (!context)
+    throw new Error("useAuth must be used inside an AuthProvider");
   return context;
 };

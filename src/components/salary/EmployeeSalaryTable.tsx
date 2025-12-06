@@ -198,8 +198,8 @@ export const EmployeeSalaryTable: React.FC = () => {
                 <TableRow key={salary.id}>
                   <TableCell>
                     <div className="flex flex-col">
-                      <span className="font-medium">{salary.employeeName ?? salary.employeeId}</span>
-                      {salary.employeeName ? <span className="text-xs text-muted-foreground">{salary.employeeId}</span> : null}
+                      <span className="font-medium">{salary.employeeName }</span>
+                      {salary.employeeName ? <span className="text-xs text-muted-foreground"></span> : null}
                     </div>
                   </TableCell>
                   <TableCell>
