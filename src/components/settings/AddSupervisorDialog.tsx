@@ -74,6 +74,7 @@ export type AddSupervisorPayload = {
   is_supervisor?: boolean;
   profile_image_url?: string | null;
   is_active?: boolean;
+  password?: string | null;
 };
 
 interface AddSupervisorDialogProps {
@@ -187,6 +188,7 @@ export const AddSupervisorDialog: React.FC<AddSupervisorDialogProps> = ({
         is_supervisor: true,
         profile_image_url: profileUrl.status === "fulfilled" ? profileUrl.value : null,
         is_active: true,
+        password: values.password,
       };
 
       // Call the callback with full payload

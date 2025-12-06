@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useToast } from '@/components/ui/use-toast';
+import { supabase } from '@/Config/supabaseClient';
 import {
   Card,
   CardContent,
@@ -84,19 +85,56 @@ const Settings: React.FC = () => {
     load();
   }, []);
 
-  const onPasswordSubmit = (values: PasswordFormValues) => {
-    // In a real app, this would call an API to change the password
-    console.log('Changing password:', values);
-
-    // Show success message
-    toast({
-      title: "Password updated",
-      description: "Your password has been changed successfully.",
+  // Handle password change submission
+  const onPasswordSubmit = async (values: PasswordFormValues) => {
+  try {
+    const { data, error } = await supabase.rpc("change_user_password", {
+      p_user_id: user?.id,
+      p_current_password: values.currentPassword,
+      p_new_password: values.newPassword,
     });
-    
-    // Reset the form
-    passwordForm.reset();
-  };
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Something went wrong while updating the password.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (data === "INVALID_PASSWORD") {
+      toast({
+        title: "Incorrect Password",
+        description: "Your current password is incorrect.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (data === "SUCCESS") {
+      toast({
+        title: "Password Updated",
+        description: "Your password has been changed successfully.",
+      });
+      passwordForm.reset();
+      return;
+    }
+
+    toast({
+      title: "Error",
+      description: "Unknown error occurred.",
+      variant: "destructive",
+    });
+  } catch (err) {
+    toast({
+      title: "Error",
+      description: "Unexpected error occurred.",
+      variant: "destructive",
+    });
+  }
+};
+
 
   const handleAddSupervisor = async (payload: AddSupervisorPayload) => {
     const res = await addSupervisor(payload);

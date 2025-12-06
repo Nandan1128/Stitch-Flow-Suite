@@ -173,7 +173,7 @@ const ProductionOperationsDialog: React.FC<Props> = ({ open, onOpenChange, produ
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogHeader>
-        <DialogTitle>Assign Worker / Record Pieces</DialogTitle>
+        <DialogTitle></DialogTitle>
       </DialogHeader>
       <DialogContent>
         <div className="space-y-4">
@@ -239,9 +239,7 @@ const ProductionOperationsDialog: React.FC<Props> = ({ open, onOpenChange, produ
            </div>
         </div>
       </DialogContent>
-      <DialogFooter>
-        <Button onClick={() => onOpenChange(false)}>Close</Button>
-      </DialogFooter>
+     
     </Dialog>
   );
 };

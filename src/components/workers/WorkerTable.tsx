@@ -59,7 +59,6 @@ export const WorkerTable: React.FC<WorkerTableProps> = ({ workers, onUpdateWorke
             <TableHead>ID</TableHead>
             <TableHead>Mobile</TableHead>
             <TableHead>Address</TableHead>
-            <TableHead>Created By</TableHead>
             <TableHead>Created At</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
@@ -85,11 +84,11 @@ export const WorkerTable: React.FC<WorkerTableProps> = ({ workers, onUpdateWorke
                   <TableCell>{worker.workerId}</TableCell>
                   <TableCell>{worker.mobileNumber}</TableCell>
                   <TableCell className="truncate max-w-[200px]">{worker.address}</TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className="capitalize">{worker.createdBy}</Badge>
-                  </TableCell>
                   <TableCell>{createdLabel}</TableCell>
                   <TableCell className="text-right">
+
+
+
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="icon">
@@ -97,6 +96,7 @@ export const WorkerTable: React.FC<WorkerTableProps> = ({ workers, onUpdateWorke
                           <span className="sr-only">Open menu</span>
                         </Button>
                       </DropdownMenuTrigger>
+
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem onClick={() => handleOpenDetails(worker)}>
                           <Eye className="mr-2 h-4 w-4" />

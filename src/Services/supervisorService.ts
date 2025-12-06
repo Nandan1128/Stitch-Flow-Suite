@@ -1,4 +1,6 @@
 import { supabase } from "@/Config/supabaseClient";
+import { BarChart } from "lucide-react";
+import bcrypt from "bcryptjs"
 // import { supabaseAdmin  } from "@/Config/supabaseAdminClient";
 
 export interface Supervisor {
@@ -87,7 +89,7 @@ export const addSupervisor = async (
             bank_account_detail: payload.bank_account_detail ?? null,
             bank_image_url: payload.bank_image_url ?? null,
             salary_amount:
-                typeof payload.salary_amount === "number" ? payload.salary_amount : null,
+            typeof payload.salary_amount === "number" ? payload.salary_amount : null,
             salary_id: payload.salary_id ?? null,
             role: payload.role ?? "supervisor",
             is_supervisor: payload.is_supervisor ?? true,
@@ -107,6 +109,7 @@ export const addSupervisor = async (
             console.error("Employee insert error:", error);
             return { data: null, error };
         }
+        const passwordHash = await bcrypt.hash(payload.password , 10);
 
         // Ensure employee exists and has id
         if (!employee || !employee.id) {
