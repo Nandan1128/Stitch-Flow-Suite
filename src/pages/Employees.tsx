@@ -7,11 +7,11 @@ import { AddEmployeeDialog } from "@/components/employees/AddEmployeeDialog";
 import { EmployeeTable } from "@/components/employees/EmployeeTable";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getEmployees, toggleEmployeeStatus, updateEmployee } from "@/Services/employeeService";
-
+import { AttendanceDialog } from '@/components/attendance/AttendanceDialog';
 const Employees: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-
+  const [isAttendanceOpen, setOpenAttendance] = useState(false);
   const queryClient = useQueryClient();
 
   
@@ -27,6 +27,7 @@ const Employees: React.FC = () => {
     id: e.id,
     employeeId: e.employee_code,
     name: e.name,
+    email : e.email,
     address: e.address,
     permanentAddress: e.permanent_address,
     currentAddress: e.current_address,
@@ -46,6 +47,8 @@ const Employees: React.FC = () => {
   const handleAddEmployee = async () => {
     await queryClient.invalidateQueries({ queryKey: ["employees"] });
   };
+
+  
 
   // Toggle active/inactive
   const handleToggleStatus = async (id: string) => {
@@ -87,10 +90,16 @@ const Employees: React.FC = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold tracking-tight">Employees</h1>
+        <Button onClick={() => setOpenAttendance(true)}>
+          <Plus className="mr-2 h-4 w-2" />
+          Mark Attendance
+        </Button>
+        
         <Button onClick={() => setIsAddDialogOpen(true)}>
           <Plus className="mr-2 h-4 w-4" />
           Add Employee
         </Button>
+
       </div>
 
       <Card>
@@ -132,8 +141,14 @@ const Employees: React.FC = () => {
         onOpenChange={setIsAddDialogOpen}
         onAddEmployee={handleAddEmployee}
       />
+      <AttendanceDialog
+        open={isAttendanceOpen}
+        onOpenChange={setOpenAttendance}
+        markedByEmployeeId={null}
+      />
     </div>
   );
+  
 };
 
 export default Employees;

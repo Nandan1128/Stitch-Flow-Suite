@@ -1,4 +1,5 @@
 import { supabase } from "@/Config/supabaseClient";
+import { getMonthlyAttendanceSummary } from "./attendanceService";
 
 export const getWorkerSalaries = async () => {
     const { data, error } = await supabase
@@ -387,3 +388,154 @@ export const addWorkerSalary = async (payload: {
         return { data: null, error: err };
     }
 };
+
+
+export const autoGenerateEmployeeSalary = async () => {
+  try {
+    const now = new Date();
+    const monthNumber = now.getMonth() + 1;
+    const yearNumber = now.getFullYear();
+
+    const salaryMonth = `${yearNumber}-${String(monthNumber).padStart(2, "0")}`;
+
+    // Total days in this month (1–28/29/30/31)
+    const calendarDays = new Date(yearNumber, monthNumber, 0).getDate();
+
+    // 1️⃣ Fetch all active employees
+    const { data: employees, error: empErr } = await supabase
+      .from("employees")
+      .select("id, name, salary_amount, is_active");
+
+    if (empErr) return { error: empErr, data: null };
+
+    const results = [];
+
+    for (const emp of employees || []) {
+      try {
+        if (!emp.is_active) continue;
+
+        const baseSalary = Number(emp.salary_amount || 0);
+
+        // 2️⃣ Fetch summary (present/absent/leave)
+        const summary = await getMonthlyAttendanceSummary(
+          emp.id,
+          monthNumber,
+          yearNumber
+        );
+
+        if (!summary) {
+          results.push({
+            employee: emp.name,
+            error: "Attendance summary not found",
+            data: null,
+          });
+          continue;
+        }
+
+        const { present, leave, absent, totalDays: attendanceDays } = summary;
+
+        // 3️⃣ Detect incomplete attendance (warn only)
+        const expectedDaysSoFar = now.getDate() - 1; // up to yesterday
+        const attendanceIncomplete = attendanceDays < expectedDaysSoFar;
+
+        // 4️⃣ Salary calculations (ABSENT = 0)
+        const dailySalary = baseSalary / calendarDays;
+
+        const salaryForPresent = present * dailySalary;
+        const salaryForLeave = leave * dailySalary;
+        const grossSalaryRaw = salaryForPresent + salaryForLeave;
+
+        // Round final salary
+        const grossSalary = Math.round(grossSalaryRaw * 100) / 100;
+
+        // 5️⃣ Check existing salary row
+        const { data: existingSalary, error: existErr } = await supabase
+          .from("employee_salaries")
+          .select("*")
+          .eq("employee_id", emp.id)
+          .eq("salary_month", salaryMonth)
+          .maybeSingle();
+
+        if (existErr) {
+          results.push({
+            employee: emp.name,
+            error: existErr.message,
+            summary,
+          });
+          continue;
+        }
+
+        // 6️⃣ If salary exists AND paid → do not modify
+        if (existingSalary && existingSalary.paid) {
+          results.push({
+            employee: emp.name,
+            skipped: true,
+            reason: "Salary already paid — cannot update",
+            summary,
+          });
+          continue;
+        }
+
+        // 7️⃣ If salary exists and NOT paid → update in place
+        if (existingSalary && !existingSalary.paid) {
+          const advance = Number(existingSalary.advance || 0);
+          const netSalary = grossSalary - advance;
+
+          const { data: updated, error: updErr } = await supabase
+            .from("employee_salaries")
+            .update({
+              gross_salary: grossSalary,
+              net_salary: netSalary,
+            })
+            .eq("id", existingSalary.id)
+            .select()
+            .single();
+
+          results.push({
+            employee: emp.name,
+            updated: true,
+            summary,
+            attendanceIncomplete,
+            salary: updated,
+          });
+
+          continue;
+        }
+
+        // 8️⃣ Create new salary row
+        const payload = {
+          employeeId: emp.id,
+          salaryMonth,
+          grossSalary,
+          advance: 0,
+          netSalary: grossSalary,
+          paid: false,
+          employeeName: emp.name,
+        };
+
+        const res = await createEmployeeSalary(payload);
+
+        results.push({
+          employee: emp.name,
+          created: true,
+          summary,
+          attendanceIncomplete,
+          salary: res,
+        });
+      } catch (loopErr) {
+        // Catch per-employee errors so loop continues safely
+        results.push({
+          employee: emp.name,
+          error: loopErr?.message || String(loopErr),
+        });
+      }
+    }
+
+    return { data: results, error: null };
+  } catch (err) {
+    return { data: null, error: err };
+  }
+};
+
+
+
