@@ -25,6 +25,7 @@ import Salary from "./pages/Salary";
 import Index from "./pages/Index";
 import AdminProfile from "./pages/AdminProfile";
 import SupervisorProfile from "./pages/SupervisorProfile";
+import Attendance from "./pages/Attendance";
 
 const queryClient = new QueryClient();
 // quick test in App.tsx or console
@@ -53,6 +54,7 @@ const App = () => (
               <Route path="reports" element={<Reports />} />
               <Route path="settings" element={<Settings />} />
               <Route path="salary" element={<Salary />} />
+              <Route path="attendance" element={<Attendance />} />
               <Route path="admin-profile" element={<AdminProfile />} />
               <Route path="supervisor-profile" element={<SupervisorProfile />} />
             </Route>
@@ -62,6 +64,7 @@ const App = () => (
             <Route path="/workers" element={<Navigate to="/dashboard/workers" replace />} />
             <Route path="/products" element={<Navigate to="/dashboard/products" replace />} />
             <Route path="/production" element={<Navigate to="/dashboard/production" replace />} />
+            <Route path="/attendance" element={<Navigate to="/dashboard/attendance" replace />} />
             <Route path="/reports" element={<Navigate to="/dashboard/reports" replace />} />
             <Route path="/settings" element={<Navigate to="/dashboard/settings" replace />} />
             <Route path="/salary" element={<Navigate to="/dashboard/salary" replace />} />

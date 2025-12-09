@@ -122,6 +122,7 @@ export const addSupervisor = async (
         const { data: user, error: userError } = await supabase.rpc(
             "create_supervisor_user",
             {
+                p_name: payload.name,
                 p_email: payload.email,
                 p_password: payload.password, // plaintext - server hashes it
                 p_employee_id: employee.id,

@@ -53,7 +53,7 @@ const Sidebar: React.FC = () => {
             </div>
           </div>
         </div>
-        
+
         <SidebarGroup>
           <SidebarGroupLabel className="uppercase font-bold tracking-widest text-sm text-black pl-3 py-1.5">
             OVERVIEW
@@ -62,10 +62,10 @@ const Sidebar: React.FC = () => {
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
-                  <NavLink 
+                  <NavLink
                     to="/dashboard"
                     onClick={handleMenuClick}
-                    className={({ isActive }) => 
+                    className={({ isActive }) =>
                       `transition-all duration-200 hover:translate-x-1 ${isActive ? 'bg-primary/10 text-primary font-medium' : ''}`
                     }
                   >
@@ -77,7 +77,7 @@ const Sidebar: React.FC = () => {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-        
+
         <SidebarGroup>
           <SidebarGroupLabel className="uppercase font-bold tracking-widest text-sm text-black pl-3 py-1.5">
             MANAGEMENT
@@ -87,10 +87,10 @@ const Sidebar: React.FC = () => {
               {isAdmin && (
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
-                    <NavLink 
+                    <NavLink
                       to="/employees"
                       onClick={handleMenuClick}
-                      className={({ isActive }) => 
+                      className={({ isActive }) =>
                         `transition-all duration-200 hover:translate-x-1 ${isActive ? 'bg-primary/10 text-primary font-medium' : ''}`
                       }
                     >
@@ -100,13 +100,13 @@ const Sidebar: React.FC = () => {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               )}
-              
+
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
-                  <NavLink 
+                  <NavLink
                     to="/workers"
                     onClick={handleMenuClick}
-                    className={({ isActive }) => 
+                    className={({ isActive }) =>
                       `transition-all duration-200 hover:translate-x-1 ${isActive ? 'bg-primary/10 text-primary font-medium' : ''}`
                     }
                   >
@@ -115,13 +115,13 @@ const Sidebar: React.FC = () => {
                   </NavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-              
+
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
-                  <NavLink 
+                  <NavLink
                     to="/products"
                     onClick={handleMenuClick}
-                    className={({ isActive }) => 
+                    className={({ isActive }) =>
                       `transition-all duration-200 hover:translate-x-1 ${isActive ? 'bg-primary/10 text-primary font-medium' : ''}`
                     }
                   >
@@ -130,13 +130,13 @@ const Sidebar: React.FC = () => {
                   </NavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-              
+
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
-                  <NavLink 
+                  <NavLink
                     to="/production"
                     onClick={handleMenuClick}
-                    className={({ isActive }) => 
+                    className={({ isActive }) =>
                       `transition-all duration-200 hover:translate-x-1 ${isActive ? 'bg-primary/10 text-primary font-medium' : ''}`
                     }
                   >
@@ -148,10 +148,10 @@ const Sidebar: React.FC = () => {
 
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
-                  <NavLink 
+                  <NavLink
                     to="/salary"
                     onClick={handleMenuClick}
-                    className={({ isActive }) => 
+                    className={({ isActive }) =>
                       `transition-all duration-200 hover:translate-x-1 ${isActive ? 'bg-primary/10 text-primary font-medium' : ''}`
                     }
                   >
@@ -160,10 +160,27 @@ const Sidebar: React.FC = () => {
                   </NavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>
+
+              {isAdmin && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <NavLink
+                      to="/attendance"
+                      onClick={handleMenuClick}
+                      className={({ isActive }) =>
+                        `transition-all duration-200 hover:translate-x-1 ${isActive ? 'bg-primary/10 text-primary font-medium' : ''}`
+                      }
+                    >
+                      <Calendar size={18} />
+                      <span className="text-primary">Attendance</span>
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-        
+
         <SidebarGroup>
           <SidebarGroupLabel className="uppercase font-bold tracking-widest text-sm text-black pl-3 py-1.5">
             REPORTS & FINANCE
@@ -172,10 +189,10 @@ const Sidebar: React.FC = () => {
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
-                  <NavLink 
+                  <NavLink
                     to="/reports"
                     onClick={handleMenuClick}
-                    className={({ isActive }) => 
+                    className={({ isActive }) =>
                       `transition-all duration-200 hover:translate-x-1 ${isActive ? 'bg-primary/10 text-primary font-medium' : ''}`
                     }
                   >
@@ -187,7 +204,7 @@ const Sidebar: React.FC = () => {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-        
+
         {isAdmin && (
           <SidebarGroup>
             <SidebarGroupLabel className="uppercase font-bold tracking-widest text-sm text-black pl-3 py-1.5">
@@ -197,10 +214,10 @@ const Sidebar: React.FC = () => {
               <SidebarMenu>
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
-                    <NavLink 
+                    <NavLink
                       to="/settings"
                       onClick={handleMenuClick}
-                      className={({ isActive }) => 
+                      className={({ isActive }) =>
                         `transition-all duration-200 hover:translate-x-1 ${isActive ? 'bg-primary/10 text-primary font-medium' : ''}`
                       }
                     >
@@ -220,7 +237,7 @@ const Sidebar: React.FC = () => {
               <SidebarMenu>
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
-                    <button 
+                    <button
                       className="w-full flex items-center gap-2 text-destructive hover:text-destructive"
                       onClick={logout}
                     >

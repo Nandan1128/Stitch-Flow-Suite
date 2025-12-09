@@ -16,6 +16,7 @@ import { getWorkerSalaries } from '@/Services/salaryService';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Production } from '@/types/production';
+import { autoGenerateEmployeeSalary } from '@/Services/salaryService';
 
 // start with empty salaries; actual rows will be loaded from DB
 const initialWorkerSalaries: WorkerSalary[] = [];
@@ -32,7 +33,7 @@ const Salary: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   // No mock productions — rely on real production data when available
   const [productions, setProductions] = useState<Production[]>([]);
-  
+
   // Function to add a new worker salary record
   const addWorkerSalary = (newSalary: WorkerSalary) => {
     setWorkerSalaries(prev => [...prev, newSalary]);
@@ -41,7 +42,7 @@ const Salary: React.FC = () => {
       description: "Worker salary record has been added successfully.",
     });
   };
-  
+
   // Function to calculate all worker salaries based on their monthly operations
   const calculateAllWorkerSalaries = () => {
     // Disabled: calculation that used to insert mock worker salary rows has been removed
@@ -52,7 +53,7 @@ const Salary: React.FC = () => {
       description: 'Calculate All is disabled to prevent inserting dummy salary records.',
     });
   };
-  
+
   // Ensure only admin and supervisor can access this page
   if (user?.role !== 'admin' && user?.role !== 'supervisor') {
     return <Navigate to="/dashboard" />;
@@ -69,43 +70,79 @@ const Salary: React.FC = () => {
       }
     })();
   }, []);
+  const handleAutoGenerate = async () => {
+  const res = await autoGenerateEmployeeSalary();
+  
+  if (res.error) {
+    toast({
+      title: "Error",
+      description: res.error.message || "Something went wrong",
+      variant: "destructive",
+    });
+    return;
+  }
+
+  toast({
+    title: "Success",
+    description: "Salaries generated for all employees.",
+  });
+};
+
 
   // Render buttons based on device type and active tab
   const renderActionButtons = () => {
     if (activeTab === "workers") {
       return (
         <div className="flex items-center space-x-2">
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             onClick={calculateAllWorkerSalaries}
             className={isMobile ? "px-2 py-1 h-8" : ""}
             size={isMobile ? "sm" : "default"}
           >
-            <Calculator className={`${isMobile ? "h-4 w-4" : "mr-2 h-4 w-4"}`} /> 
+            <Calculator className={`${isMobile ? "h-4 w-4" : "mr-2 h-4 w-4"}`} />
             {!isMobile && "Calculate All"}
           </Button>
-          <Button 
+
+
+          <Button
             onClick={() => setIsAddWorkerSalaryOpen(true)}
             className={isMobile ? "px-2 py-1 h-8" : ""}
             size={isMobile ? "sm" : "default"}
           >
-            <PlusCircle className={`${isMobile ? "h-4 w-4" : "mr-2 h-4 w-4"}`} /> 
+            <PlusCircle className={`${isMobile ? "h-4 w-4" : "mr-2 h-4 w-4"}`} />
             {!isMobile && "Add Worker Salary"}
           </Button>
+
         </div>
       );
     } else if (activeTab === "employees" && isAdmin) {
       return (
-        <Button 
-          onClick={() => setIsAddEmployeeSalaryOpen(true)}
-          className={isMobile ? "px-2 py-1 h-8" : ""}
-          size={isMobile ? "sm" : "default"}
-        >
-          <PlusCircle className={`${isMobile ? "h-4 w-4" : "mr-2 h-4 w-4"}`} /> 
-          {!isMobile && "Add Employee Salary"}
-        </Button>
+        <div className="flex items-center space-x-2">
+          {/* NEW AUTO GENERATE BUTTON */}
+          <Button
+            variant="outline"
+            onClick={handleAutoGenerate}
+            className={isMobile ? "px-2 py-1 h-8" : ""}
+            size={isMobile ? "sm" : "default"}
+          >
+            <Calculator className={`${isMobile ? "h-4 w-4" : "mr-2 h-4 w-4"}`} />
+            {!isMobile && "Auto Generate"}
+          </Button>
+
+          {/* ORIGINAL "ADD EMPLOYEE SALARY" BUTTON */}
+          <Button
+            onClick={() => setIsAddEmployeeSalaryOpen(true)}
+            className={isMobile ? "px-2 py-1 h-8" : ""}
+            size={isMobile ? "sm" : "default"}
+          >
+            <PlusCircle className={`${isMobile ? "h-4 w-4" : "mr-2 h-4 w-4"}`} />
+            {!isMobile && "Add Employee Salary"}
+          </Button>
+        </div>
       );
     }
+
     return null;
   };
 
@@ -127,8 +164,8 @@ const Salary: React.FC = () => {
                 <div className="space-y-2">
                   {activeTab === "workers" && (
                     <>
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         onClick={() => {
                           calculateAllWorkerSalaries();
                           setMobileMenuOpen(false);
@@ -137,7 +174,7 @@ const Salary: React.FC = () => {
                       >
                         <Calculator className="mr-2 h-4 w-4" /> Calculate All Salaries
                       </Button>
-                      <Button 
+                      <Button
                         onClick={() => {
                           setIsAddWorkerSalaryOpen(true);
                           setMobileMenuOpen(false);
@@ -149,16 +186,50 @@ const Salary: React.FC = () => {
                     </>
                   )}
                   {activeTab === "employees" && isAdmin && (
-                    <Button 
-                      onClick={() => {
-                        setIsAddEmployeeSalaryOpen(true);
-                        setMobileMenuOpen(false);
-                      }}
-                      className="w-full justify-start"
-                    >
-                      <PlusCircle className="mr-2 h-4 w-4" /> Add Employee Salary
-                    </Button>
+                    <>
+                      {/* AUTO GENERATE BUTTON (MOBILE) */}
+                      <Button
+                        variant="outline"
+                        onClick={async () => {
+                          const res = await autoGenerateEmployeeSalary();
+
+                          if (res?.error) {
+                            toast({
+                              title: "Error",
+                              description:
+                                typeof res.error === "string"
+                                  ? res.error
+                                  : res.error.message ?? "Failed to generate salaries",
+                              variant: "destructive",
+                            });
+                            return;
+                          }
+
+                          toast({
+                            title: "Success",
+                            description: "Employee salaries auto-generated for this month.",
+                          });
+
+                          setMobileMenuOpen(false);
+                        }}
+                        className="w-full justify-start"
+                      >
+                        <Calculator className="mr-2 h-4 w-4" /> Auto Generate
+                      </Button>
+
+                      {/* EXISTING ADD EMPLOYEE SALARY BUTTON */}
+                      <Button
+                        onClick={() => {
+                          setIsAddEmployeeSalaryOpen(true);
+                          setMobileMenuOpen(false);
+                        }}
+                        className="w-full justify-start"
+                      >
+                        <PlusCircle className="mr-2 h-4 w-4" /> Add Employee Salary
+                      </Button>
+                    </>
                   )}
+
                 </div>
               </div>
             </SheetContent>
@@ -177,9 +248,9 @@ const Salary: React.FC = () => {
                 <CardTitle className="text-lg">Workers Salary Records</CardTitle>
               </CardHeader>
               <CardContent>
-                <WorkerSalaryTable 
-                  salaries={workerSalaries} 
-                  setSalaries={setWorkerSalaries} 
+                <WorkerSalaryTable
+                  salaries={workerSalaries}
+                  setSalaries={setWorkerSalaries}
                   productions={productions}
                 />
               </CardContent>
@@ -200,17 +271,17 @@ const Salary: React.FC = () => {
           )}
         </Tabs>
 
-        <AddWorkerSalaryDialog 
-          open={isAddWorkerSalaryOpen} 
-          onOpenChange={setIsAddWorkerSalaryOpen} 
+        <AddWorkerSalaryDialog
+          open={isAddWorkerSalaryOpen}
+          onOpenChange={setIsAddWorkerSalaryOpen}
           onAddSalary={addWorkerSalary}
           productions={productions}
         />
 
         {isAdmin && (
-          <AddEmployeeSalaryDialog 
-            open={isAddEmployeeSalaryOpen} 
-            onOpenChange={setIsAddEmployeeSalaryOpen} 
+          <AddEmployeeSalaryDialog
+            open={isAddEmployeeSalaryOpen}
+            onOpenChange={setIsAddEmployeeSalaryOpen}
           />
         )}
       </div>
@@ -230,7 +301,7 @@ const Salary: React.FC = () => {
             <TabsTrigger value="workers">Workers Salary</TabsTrigger>
             {isAdmin && <TabsTrigger value="employees">Employees Salary</TabsTrigger>}
           </TabsList>
-          
+
           {renderActionButtons()}
         </div>
 
@@ -243,9 +314,9 @@ const Salary: React.FC = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <WorkerSalaryTable 
-                salaries={workerSalaries} 
-                setSalaries={setWorkerSalaries} 
+              <WorkerSalaryTable
+                salaries={workerSalaries}
+                setSalaries={setWorkerSalaries}
                 productions={productions}
               />
             </CardContent>
@@ -269,17 +340,17 @@ const Salary: React.FC = () => {
         )}
       </Tabs>
 
-      <AddWorkerSalaryDialog 
-        open={isAddWorkerSalaryOpen} 
-        onOpenChange={setIsAddWorkerSalaryOpen} 
+      <AddWorkerSalaryDialog
+        open={isAddWorkerSalaryOpen}
+        onOpenChange={setIsAddWorkerSalaryOpen}
         onAddSalary={addWorkerSalary}
         productions={productions}
       />
 
       {isAdmin && (
-        <AddEmployeeSalaryDialog 
-          open={isAddEmployeeSalaryOpen} 
-          onOpenChange={setIsAddEmployeeSalaryOpen} 
+        <AddEmployeeSalaryDialog
+          open={isAddEmployeeSalaryOpen}
+          onOpenChange={setIsAddEmployeeSalaryOpen}
         />
       )}
     </div>

@@ -31,6 +31,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { EmployeeSalary } from "@/types/salary";
 import { v4 as uuidv4 } from "uuid";
 import { cn } from "@/lib/utils";
+import { autoGenerateEmployeeSalary } from "@/Services/salaryService";
 import { supabase } from "@/Config/supabaseClient";
 
 interface AddEmployeeSalaryDialogProps {
@@ -130,16 +131,9 @@ export const AddEmployeeSalaryDialog: React.FC<
       paid: false,
     };
 
-    // Save via service
-    const res = await createEmployeeSalary({
-      employeeId: newSalary.employeeId,
-      salaryMonth: newSalary.month,
-      grossSalary: newSalary.salary,
-      advance: newSalary.advance,
-      netSalary: newSalary.netSalary,
-      paid: false,
-      employeeName: employees.find(e => e.id === newSalary.employeeId)?.name ?? null,
-    });
+    const res = await autoGenerateEmployeeSalary();
+
+
 
     if (res?.error) {
       toast({
