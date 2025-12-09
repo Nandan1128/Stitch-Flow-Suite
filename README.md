@@ -4,6 +4,7 @@ A full-stack management system built for manufacturing businesses to automate em
 The system integrates employees, workers, operations, production, and attendance modules into a unified workflow, reducing manual work and ensuring accurate salary computation.
 
 🚀 Features
+
 🔹 Employee Management
 
 Add, update, and manage employee details
@@ -94,7 +95,8 @@ React Query for data fetching and caching
 
 Fully responsive (Mobile + Desktop)
 
-🧠 Core System Logic
+🧠 Core System Logic:
+
 ✔ Attendance → Salary Flow
 
 Admin/Supervisor marks daily attendance
