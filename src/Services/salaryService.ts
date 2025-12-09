@@ -538,8 +538,6 @@ export const autoGenerateEmployeeSalary = async () => {
 };
 
 
-
-
 export const getPaidEmployeeIdsForMonth = async (month: number, year: number) => {
     const monthStr = `${year}-${String(month).padStart(2, "0")}`;
 
