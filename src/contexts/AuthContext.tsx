@@ -10,6 +10,12 @@ import { supabase } from "@/Config/supabaseClient";
 import bcrypt from "bcryptjs";
 import { User, LoginCredentials, AuthState, UserRole } from "@/types/auth";
 
+// Fix for "crypto is not defined" or "browser-external:crypto" in Vite
+bcrypt.setRandomFallback((len) => {
+  const buf = new Uint8Array(len);
+  return Array.from(window.crypto.getRandomValues(buf));
+});
+
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;

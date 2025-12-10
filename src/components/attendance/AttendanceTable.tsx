@@ -14,7 +14,28 @@ export const AttendanceTable = ({
 }) => {
   const daysInMonth = useMemo(() => new Date(year, month, 0).getDate(), [month, year]);
 
-  const [local, setLocal] = useState(attendance);
+  // Transform array -> Map: "employeeId-day" => { status }
+  const transformToMap = (data) => {
+    const map = {};
+    if (Array.isArray(data)) {
+      data.forEach((row) => {
+        if (row.date) {
+          const d = new Date(row.date);
+          const day = d.getDate();
+          const key = `${row.person_id}-${day}`;
+          map[key] = { status: row.status };
+        }
+      });
+    }
+    return map;
+  };
+
+  const [local, setLocal] = useState({});
+
+  // Sync state when attendance prop or month/year changes
+  React.useEffect(() => {
+    setLocal(transformToMap(attendance));
+  }, [attendance, month, year]);
 
   const handleChange = (empId, day, value) => {
     const key = `${empId}-${day}`;
@@ -27,11 +48,18 @@ export const AttendanceTable = ({
   const buildSavePayload = () => {
     const rows = [];
 
+    // Combine local changes with existing map structure logic
+    // We iterate over known employees & days or just the local map keys?
+    // Better: Iterate local map keys to find what changed, OR 
+    // simply iterate over ALL cells if we want to be safe, but local map has the edits.
+
     Object.keys(local).forEach((key) => {
       const lastDashIndex = key.lastIndexOf("-");
       const empId = key.substring(0, lastDashIndex);
-      const day = key.substring(lastDashIndex + 1);
+      const day = parseInt(key.substring(lastDashIndex + 1));
+
       const row = local[key];
+      // Re-construct date safely
       const date = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 
       // Skip if employee is paid (double safety)

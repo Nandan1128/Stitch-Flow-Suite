@@ -32,9 +32,13 @@ import { getEmployeeSalaries, markEmployeeSalariesPaid } from '@/Services/salary
 import { getEmployees } from "@/Services/salaryService";
 import EditEmployeeSalaryDialog from "./EditEmployeeSalaryDialog";
 
-export const EmployeeSalaryTable: React.FC = () => {
-  const [year, setYear] = useState<string>(new Date().getFullYear().toString());
-  const [month, setMonth] = useState<string>(new Date().getMonth().toString());
+interface EmployeeSalaryTableProps {
+  month: string;
+  year: string;
+  refreshTrigger?: number;
+}
+
+export const EmployeeSalaryTable: React.FC<EmployeeSalaryTableProps> = ({ month, year, refreshTrigger = 0 }) => {
   const { toast } = useToast();
   const [salaries, setSalaries] = useState<EmployeeSalary[]>([]);
   const [loading, setLoading] = useState(false);
@@ -68,9 +72,10 @@ export const EmployeeSalaryTable: React.FC = () => {
     }
   };
 
+  // refresh when month/year changes OR when triggered by parent (auto-generate)
   useEffect(() => {
     loadSalaries();
-  }, []);
+  }, [month, year, refreshTrigger]);
 
   const markAsPaid = async (id: string) => {
     try {
@@ -110,24 +115,6 @@ export const EmployeeSalaryTable: React.FC = () => {
     });
   }, [salaries, month, year]);
 
-  const months = [
-    { value: '0', label: 'January' },
-    { value: '1', label: 'February' },
-    { value: '2', label: 'March' },
-    { value: '3', label: 'April' },
-    { value: '4', label: 'May' },
-    { value: '5', label: 'June' },
-    { value: '6', label: 'July' },
-    { value: '7', label: 'August' },
-    { value: '8', label: 'September' },
-    { value: '9', label: 'October' },
-    { value: '10', label: 'November' },
-    { value: '11', label: 'December' },
-  ];
-
-  const currentYear = new Date().getFullYear();
-  const years = Array.from({ length: 5 }, (_, i) => (currentYear - 2 + i).toString());
-
   return (
     <div className="space-y-4">
       {error && (
@@ -140,31 +127,8 @@ export const EmployeeSalaryTable: React.FC = () => {
           </div>
         </div>
       )}
-      <div className="flex items-center gap-4">
-        <div className="flex items-center gap-2">
-          <CalendarIcon className="h-4 w-4 opacity-50" />
-          <Select value={month} onValueChange={setMonth}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Select month" />
-            </SelectTrigger>
-            <SelectContent>
-              {months.map(m => (
-                <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <Select value={year} onValueChange={setYear}>
-          <SelectTrigger className="w-[120px]">
-            <SelectValue placeholder="Select year" />
-          </SelectTrigger>
-          <SelectContent>
-            {years.map(y => (
-              <SelectItem key={y} value={y}>{y}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+
+      {/* Selector removed from here, controlled by parent */}
 
       <div className="rounded-md border">
         <Table>
@@ -198,7 +162,7 @@ export const EmployeeSalaryTable: React.FC = () => {
                 <TableRow key={salary.id}>
                   <TableCell>
                     <div className="flex flex-col">
-                      <span className="font-medium">{salary.employeeName }</span>
+                      <span className="font-medium">{salary.employeeName}</span>
                       {salary.employeeName ? <span className="text-xs text-muted-foreground"></span> : null}
                     </div>
                   </TableCell>
