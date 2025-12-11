@@ -390,11 +390,12 @@ export const addWorkerSalary = async (payload: {
 };
 
 
-export const autoGenerateEmployeeSalary = async () => {
+export const autoGenerateEmployeeSalary = async (targetMonth?: number, targetYear?: number) => {
     try {
         const now = new Date();
-        const monthNumber = now.getMonth() + 1;
-        const yearNumber = now.getFullYear();
+        // Use provided month/year or default to current
+        const monthNumber = targetMonth || (now.getMonth() + 1);
+        const yearNumber = targetYear || now.getFullYear();
 
         const salaryMonth = `${yearNumber}-${String(monthNumber).padStart(2, "0")}`;
 
@@ -435,18 +436,27 @@ export const autoGenerateEmployeeSalary = async () => {
                 const { present, leave, absent, totalDays: attendanceDays } = summary;
 
                 // 3️⃣ Detect incomplete attendance (warn only)
-                const expectedDaysSoFar = now.getDate() - 1; // up to yesterday
+                // If generating for a past month, we expect full month attendance. 
+                // If current month, we expect up to yesterday/today.
+                let expectedDaysSoFar = calendarDays;
+                if (yearNumber === now.getFullYear() && monthNumber === (now.getMonth() + 1)) {
+                    expectedDaysSoFar = now.getDate();
+                }
                 const attendanceIncomplete = attendanceDays < expectedDaysSoFar;
 
-                // 4️⃣ Salary calculations (ABSENT = 0)
+                // 4️⃣ Salary calculations
+                // FIX: Use "Negative Attendance" logic. 
+                // Since data might be sparse (only absences marked), we assume "Base - Absent".
                 const dailySalary = baseSalary / calendarDays;
 
-                const salaryForPresent = present * dailySalary;
-                const salaryForLeave = leave * dailySalary;
-                const grossSalaryRaw = salaryForPresent + salaryForLeave;
+                // Deduct only for explicit ABSENT days.
+                // Leave is treated as Paid (Present) in this simple model unless explicitly unpaid.
+                const deduction = absent * dailySalary;
+
+                const grossSalaryRaw = Math.max(0, baseSalary - deduction);
 
                 // Round final salary
-                const grossSalary = Math.round(grossSalaryRaw * 100) / 100;
+                const grossSalary = Math.round(grossSalaryRaw);
 
                 // 5️⃣ Check existing salary row
                 const { data: existingSalary, error: existErr } = await supabase
