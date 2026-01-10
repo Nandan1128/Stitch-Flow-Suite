@@ -6,8 +6,8 @@ import Sidebar from './Sidebar';
 import Header from './Header';
 
 // Simple error boundary to keep layout visible even if a child errors
-class LayoutErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean}> {
-  constructor(props: {children: React.ReactNode}) {
+class LayoutErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean }> {
+  constructor(props: { children: React.ReactNode }) {
     super(props);
     this.state = { hasError: false };
   }
@@ -23,7 +23,7 @@ class LayoutErrorBoundary extends React.Component<{children: React.ReactNode}, {
       return (
         <div className="flex flex-col items-center justify-center min-h-screen w-full">
           <div className="mb-2 font-bold text-destructive">Something went wrong in this page.</div>
-          <button className="underline" onClick={()=>window.location.reload()}>Reload</button>
+          <button className="underline" onClick={() => window.location.reload()}>Reload</button>
         </div>
       );
     }
@@ -50,7 +50,7 @@ const AppLayout: React.FC = () => {
   console.log("Rendering AppLayout with sidebar and header");
 
   return (
-    <SidebarProvider defaultOpen={false}>
+    <SidebarProvider defaultOpen={true}>
       {/* Mobile-first: Stack sidebar/header/main on small screens. Row on md+ */}
       <div className="min-h-screen flex flex-col md:flex-row w-full">
         <Sidebar />
