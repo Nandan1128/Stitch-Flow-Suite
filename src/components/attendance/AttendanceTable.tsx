@@ -50,7 +50,7 @@ export const AttendanceTable = ({
 
     // Combine local changes with existing map structure logic
     // We iterate over known employees & days or just the local map keys?
-    // Better: Iterate local map keys to find what changed, OR 
+    // Better: Iterate local map keys to find what changed, OR
     // simply iterate over ALL cells if we want to be safe, but local map has the edits.
 
     Object.keys(local).forEach((key) => {

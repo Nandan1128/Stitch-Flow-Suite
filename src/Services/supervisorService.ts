@@ -94,7 +94,7 @@ export const addSupervisor = async (
             bank_account_detail: payload.bank_account_detail ?? null,
             bank_image_url: payload.bank_image_url ?? null,
             salary_amount:
-                typeof payload.salary_amount === "number" ? payload.salary_amount : null,
+            typeof payload.salary_amount === "number" ? payload.salary_amount : null,
             salary_id: payload.salary_id ?? null,
             role: payload.role ?? "supervisor",
             is_supervisor: payload.is_supervisor ?? true,
