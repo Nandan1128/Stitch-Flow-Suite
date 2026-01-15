@@ -204,22 +204,7 @@ const Salary: React.FC = () => {
     return null;
   };
 
-  // Mobile view with sheet for action buttons
-  if (isMobile) {
-    // ... skipped mobile specific updates for brevity, assuming desktop first focus ...
-    // Note: Ideally we update mobile menu too, but keeping logic consistent.
-    // For now simple return.
-    return (
-      <div className="space-y-4">
-        {/* Mobile simplified implementation for brevity - just forcing desktop logic wrapper */}
-        <div className="flex items-center justify-between mb-2">
-          <h1 className="text-xl font-bold tracking-tight">Salary Management</h1>
-          {/* ... */}
-        </div>
-        {/* ... */}
-      </div>
-    )
-  }
+
 
   // Desktop view logic continues...
   // ...

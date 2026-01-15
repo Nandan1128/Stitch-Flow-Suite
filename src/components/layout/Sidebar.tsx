@@ -205,13 +205,13 @@ const Sidebar: React.FC = () => {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {isAdmin && (
-          <SidebarGroup>
-            <SidebarGroupLabel className="uppercase font-bold tracking-widest text-sm text-black pl-3 py-1.5">
-              ADMINISTRATION
-            </SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
+        <SidebarGroup>
+          <SidebarGroupLabel className="uppercase font-bold tracking-widest text-sm text-black pl-3 py-1.5">
+            {isAdmin ? "ADMINISTRATION" : "ACCOUNT"}
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {isAdmin && (
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
                     <NavLink
@@ -226,30 +226,22 @@ const Sidebar: React.FC = () => {
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        )}
+              )}
 
-        <div className="absolute bottom-4 w-full px-3">
-          <SidebarGroup>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild>
-                    <button
-                      className="w-full flex items-center gap-2 text-destructive hover:text-destructive"
-                      onClick={logout}
-                    >
-                      <LogOut size={18} />
-                      <span className="text-primary">Logout</span>
-                    </button>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        </div>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <button
+                    className="w-full flex items-center gap-2 text-destructive hover:text-destructive"
+                    onClick={logout}
+                  >
+                    <LogOut size={18} />
+                    <span className="text-primary">Logout</span>
+                  </button>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
       </SidebarContent>
     </SidebarComponent>
   );
