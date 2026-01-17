@@ -98,16 +98,6 @@ const Employees: React.FC = () => {
 
           <Button onClick={() => setIsAddDialogOpen(true)} className="w-full sm:w-auto text-xs sm:text-sm h-9 sm:h-10">
             <Plus className="mr-2 h-3 w-3 sm:h-4 sm:w-4" />
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <h1 className="text-3xl font-bold tracking-tight">Employees</h1>
-        <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2 w-full md:w-auto">
-          <Button onClick={() => setOpenAttendance(true)} className="w-full md:w-auto">
-            <Plus className="mr-2 h-4 w-4" />
-            Mark Attendance
-          </Button>
-
-          <Button onClick={() => setIsAddDialogOpen(true)} className="w-full md:w-auto">
-            <Plus className="mr-2 h-4 w-4" />
             Add Employee
           </Button>
         </div>
