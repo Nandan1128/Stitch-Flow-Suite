@@ -20,6 +20,7 @@ import Workers from "./pages/Workers";
 import Products from "./pages/Products";
 import Production from "./pages/Production";
 import Reports from "./pages/Reports";
+import OperationReport from "./pages/OperationReport";
 import Settings from "./pages/Settings";
 import Salary from "./pages/Salary";
 import Index from "./pages/Index";
@@ -43,7 +44,7 @@ const App = () => (
 
             {/* Public routes */}
             <Route path="/login" element={<Login />} />
-            
+
             {/* Protected routes with AppLayout */}
             <Route path="/dashboard" element={<AppLayout />}>
               <Route index element={<Dashboard />} />
@@ -52,6 +53,7 @@ const App = () => (
               <Route path="products" element={<Products />} />
               <Route path="production" element={<Production />} />
               <Route path="reports" element={<Reports />} />
+              <Route path="operation-report" element={<OperationReport />} />
               <Route path="settings" element={<Settings />} />
               <Route path="salary" element={<Salary />} />
               <Route path="attendance" element={<Attendance />} />

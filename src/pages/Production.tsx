@@ -26,11 +26,13 @@ import {
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Production } from "@/types/production";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const ProductionPage: React.FC = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  const [activeTab, setActiveTab] = useState<'active' | 'completed'>('active');
   const [searchTerm, setSearchTerm] = useState("");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -79,6 +81,11 @@ const ProductionPage: React.FC = () => {
   };
 
   const filtered = (productions || []).filter((p: any) => {
+    // Status filter
+    const status = p.status || 'active'; // Default to active if undefined
+    if (status !== activeTab) return false;
+
+    // Search filter
     const term = (searchTerm || "").toLowerCase();
     return (
       (p.productName || p.name || "").toString().toLowerCase().includes(term) ||
@@ -87,6 +94,9 @@ const ProductionPage: React.FC = () => {
       (p.color || "").toString().toLowerCase().includes(term)
     );
   });
+
+  const activeCount = (productions || []).filter((p: any) => (p.status || 'active') === 'active').length;
+  const completedCount = (productions || []).filter((p: any) => p.status === 'completed').length;
 
   return (
     <div className="space-y-6">
@@ -100,8 +110,19 @@ const ProductionPage: React.FC = () => {
 
       <Card>
         <CardHeader>
-          <CardTitle>Production Records</CardTitle>
-          <CardDescription>View & manage all production entries.</CardDescription>
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <CardTitle>Production Records</CardTitle>
+              <CardDescription>View & manage all production entries.</CardDescription>
+            </div>
+
+            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'active' | 'completed')} className="w-full md:w-auto">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="active">Active ({activeCount})</TabsTrigger>
+                <TabsTrigger value="completed">Completed ({completedCount})</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
         </CardHeader>
 
         <CardContent>
@@ -119,6 +140,7 @@ const ProductionPage: React.FC = () => {
             productions={filtered}
             onEditProduction={handleEditProduction}
             onViewOperations={handleViewOperations}
+            activeTab={activeTab}
           />
         </CardContent>
       </Card>

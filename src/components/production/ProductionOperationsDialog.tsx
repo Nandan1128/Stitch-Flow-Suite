@@ -11,7 +11,7 @@ import { getWorkers } from "@/Services/workerService";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { addWorkerSalary, updateWorkerSalaryByOps, deleteWorkerSalary } from "@/Services/salaryService";
-import { deleteProductionOperation } from "@/Services/productionService";
+import { deleteProductionOperation, checkAndUpdateProductionStatus } from "@/Services/productionService";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -79,6 +79,27 @@ const ProductionOperationsDialog: React.FC<Props> = ({ open, onOpenChange, produ
     })();
   }, [production]);
 
+  // Get production quantity limit
+  const productionLimit = React.useMemo(() => {
+    return (production as any)?.total_quantity || 0;
+  }, [production]);
+
+  // Calculate total for the currently selected/editing operation
+  const currentOperationTotal = React.useMemo(() => {
+    let operationId: string | null = null;
+    if (selectedOpId && selectedOpId.startsWith("master:")) {
+      operationId = selectedOpId.split(":")[1];
+    } else if (editingOperation) {
+      operationId = editingOperation.operation_id;
+    }
+
+    if (!operationId) return 0;
+
+    return ops
+      .filter(op => op.operation_id === operationId && op.id !== editingOperation?.id)
+      .reduce((sum, op) => sum + (Number(op.pieces_done) || 0), 0);
+  }, [ops, selectedOpId, editingOperation]);
+
   const handleAdd = async () => {
     if (!production) {
       toast({ title: "Production missing", variant: "destructive" });
@@ -86,6 +107,36 @@ const ProductionOperationsDialog: React.FC<Props> = ({ open, onOpenChange, produ
     }
 
     try {
+      // Validate quantity limit - each operation is limited to production total_quantity
+      const requestedPieces = Number(pieces) || 0;
+      const productionLimit = (production as any)?.total_quantity || 0;
+
+      // Determine which operation we're working with
+      let operationId: string | null = null;
+      if (selectedOpId && selectedOpId.startsWith("master:")) {
+        operationId = selectedOpId.split(":")[1];
+      } else if (editingOperation) {
+        operationId = editingOperation.operation_id;
+      }
+
+      // Calculate total already done for THIS specific operation
+      let totalForThisOperation = 0;
+      if (operationId) {
+        totalForThisOperation = ops
+          .filter(op => op.operation_id === operationId && op.id !== editingOperation?.id)
+          .reduce((sum, op) => sum + (Number(op.pieces_done) || 0), 0);
+      }
+
+      const newTotal = totalForThisOperation + requestedPieces;
+
+      if (newTotal > productionLimit) {
+        toast({
+          title: "Quantity Limit Exceeded",
+          description: `Cannot add ${requestedPieces} pieces. This operation already has ${totalForThisOperation} pieces. Total would be ${newTotal}, but limit is ${productionLimit} pieces.`,
+          variant: "destructive"
+        });
+        return;
+      }
       // If a master operation was selected (value starts with `master:`), insert a new production_operation
       if (selectedOpId && selectedOpId.startsWith("master:")) {
         const masterId = selectedOpId.split(":")[1];
@@ -95,7 +146,6 @@ const ProductionOperationsDialog: React.FC<Props> = ({ open, onOpenChange, produ
         const workerName = worker ? worker.name : null;
 
         const payload = {
-          production_cutting_id: null,
           operation_id: masterId,
           worker_id: selectedWorkerId || null,
           worker_name: workerName || null,
@@ -133,6 +183,16 @@ const ProductionOperationsDialog: React.FC<Props> = ({ open, onOpenChange, produ
 
         const refreshed = await getOperationsByProductionId(production.id);
         setOps(refreshed || []);
+
+        // Check completion status
+        const statusChanged = await checkAndUpdateProductionStatus(production.id);
+        if (statusChanged) {
+          toast({
+            title: "Production Completed!",
+            description: "All operations have been finished for this production.",
+            className: "bg-green-100 border-green-200 text-green-800"
+          });
+        }
 
         // clear form
         setSelectedOpId(null);
@@ -231,6 +291,16 @@ const ProductionOperationsDialog: React.FC<Props> = ({ open, onOpenChange, produ
       setOps(refreshed || []);
 
       onAssignWorker && onAssignWorker(production.id, targetOpId, selectedWorkerId || "", pieces || 0);
+
+      // Check if production should be marked as completed
+      const statusChanged = await checkAndUpdateProductionStatus(production.id);
+      if (statusChanged) {
+        toast({
+          title: "Production Completed!",
+          description: "All operations have been finished for this production.",
+          className: "bg-green-100 border-green-200 text-green-800"
+        });
+      }
 
       // Cleanup
       setSelectedOpId(null);
@@ -343,6 +413,36 @@ const ProductionOperationsDialog: React.FC<Props> = ({ open, onOpenChange, produ
               onChange={(e) => setPieces(Number(e.target.value))}
               className="w-full border rounded px-2 py-2"
             />
+          </div>
+
+          {/* Production Quantity Info */}
+          <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <div className="flex-1">
+                  <div className="text-sm text-blue-900 dark:text-blue-100 font-medium">Per-Operation Limit</div>
+                  <div className="text-xs text-blue-700 dark:text-blue-300 mt-1">
+                    Production total quantity
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-lg font-bold text-blue-900 dark:text-blue-100">{productionLimit}</div>
+                  <div className="text-xs text-blue-700 dark:text-blue-300">pcs max</div>
+                </div>
+              </div>
+              {(selectedOpId || editingOperation) && (
+                <div className="pt-2 border-t border-blue-200 dark:border-blue-800">
+                  <div className="flex justify-between items-center">
+                    <div className="text-xs text-blue-700 dark:text-blue-300">Already recorded for this operation:</div>
+                    <div className="text-sm font-semibold text-blue-900 dark:text-blue-100">{currentOperationTotal} pcs</div>
+                  </div>
+                  <div className="flex justify-between items-center mt-1">
+                    <div className="text-xs text-blue-700 dark:text-blue-300">Remaining for this operation:</div>
+                    <div className="text-sm font-semibold text-green-700 dark:text-green-400">{Math.max(0, productionLimit - currentOperationTotal)} pcs</div>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="flex justify-end gap-2">

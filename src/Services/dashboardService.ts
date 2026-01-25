@@ -95,10 +95,14 @@ export const getDashboardData = async (userId?: string | null, isAdmin = false) 
 
 
         // PRODUCTION PROGRESS: compute percentage per active production (pieces completed / total_quantity)
+        // Only fetch active productions
         const { data: productions } = await supabase
             .from("production")
-            .select("id,product_id,total_quantity,po_number")
-            .order("created_at", { ascending: false });
+            .select("id,product_id,total_quantity,po_number,status")
+            .neq("status", "completed") // Filter out completed productions
+            .order("created_at", { ascending: false })
+            .limit(20); // Limit to recent active productions
+
         // Map production id -> pieces completed (from production_operation)
         const productionIds = (productions || []).map((p: any) => p.id).filter(Boolean);
         let progressMap: Record<string, number> = {};
@@ -113,18 +117,40 @@ export const getDashboardData = async (userId?: string | null, isAdmin = false) 
             });
         }
 
-        // fetch product names for display
+        // fetch product names and operation counts for display/calculation
         const productIds = Array.from(new Set((productions || []).map((p: any) => p.product_id).filter(Boolean)));
         let productMap: Record<string, string> = {};
+        let opCountMap: Record<string, number> = {};
+
         if (productIds.length > 0) {
+            // Get product names
             const { data: prods } = await supabase.from("products").select("id,name").in("id", productIds);
             (prods || []).forEach((p: any) => { if (p?.id) productMap[p.id] = p.name; });
+
+            // Get operation counts per product
+            const { data: ops } = await supabase
+                .from("operations")
+                .select("product_id")
+                .in("product_id", productIds);
+
+            (ops || []).forEach((o: any) => {
+                opCountMap[o.product_id] = (opCountMap[o.product_id] || 0) + 1;
+            });
         }
 
         const productionProgress = (productions || []).map((p: any) => {
-            const total = Number(p.total_quantity ?? 0);
+            const totalQty = Number(p.total_quantity ?? 0);
+            const opCount = opCountMap[p.product_id] || 0;
+
+            // If no operations, default to 1 to avoid division by zero (though logically should be 0 progress if 0 ops) or raw quantity
+            // Better: If opCount is 0, totalWorkRequired is just totals? No, if 0 ops, technically 0 work.
+            // Let's assume at least 1 op for calculation if map is empty, or handle gracefully.
+            const divisorOps = opCount > 0 ? opCount : 1;
+
+            const totalRequired = totalQty * divisorOps;
             const completed = Number(progressMap[p.id] ?? 0);
-            const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+            const percent = totalRequired > 0 ? Math.round((completed / totalRequired) * 100) : 0;
             return {
                 id: p.id,
                 productName: productMap[p.product_id] ?? `Prod ${p.id}`,

@@ -11,8 +11,8 @@ import {
   calculateProductionReport,
   calculateOperationsChartData,
   calculateWorkerPerformance,
-  fetchProductCost,
   calculateCustomReport,
+  calculateFinishedPieces,
 } from "@/Services/reportService";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
@@ -54,18 +54,18 @@ const ReportPage: React.FC = () => {
       .catch((err) => console.error(err));
   }, []);
 
-  useEffect(() => {
-    if (!selectedProductionId) return;
+  // useEffect(() => {
+  //   if (!selectedProductionId) return;
 
-    // get selected production row
-    const prod = productions.find(p => p.id === selectedProductionId);
-    if (!prod?.product_id) return;
+  //   // get selected production row
+  //   const prod = productions.find(p => p.id === selectedProductionId);
+  //   if (!prod?.product_id) return;
 
-    // fetch product cost from service
-    fetchProductCost(prod.product_id)
-      .then(({ costPerPiece }) => setCostPerPiece(costPerPiece))
-      .catch(() => setCostPerPiece(0));
-  }, [selectedProductionId, productions]);
+  // fetch product cost from service
+  //   fetchProductCost(prod.product_id)
+  //     .then(({ costPerPiece }) => setCostPerPiece(costPerPiece))
+  //     .catch(() => setCostPerPiece(0));
+  // }, [selectedProductionId, productions]);
 
   useEffect(() => {
     if (!selectedProductionId) return;
@@ -86,10 +86,15 @@ const ReportPage: React.FC = () => {
   const operationsChart = useMemo(() => calculateOperationsChartData(operations, resolvedPeriod), [operations, resolvedPeriod]);
   const employeePerformance = useMemo(() => calculateWorkerPerformance(salaries, resolvedPeriod), [salaries, resolvedPeriod]);
 
+  // Calculate finished pieces
+  const finishedPieces = useMemo(() => {
+    const prod = productions.find(p => p.id === selectedProductionId);
+    return calculateFinishedPieces(operations, prod?.product_id || "");
+  }, [operations, selectedProductionId, productions]);
+
   const chartData = [{
     name: "Production Cost Breakdown",
     "Operation Expense": report.operationExpense,
-    "Raw Material Cost": report.rawMaterialCost,
     "Total Expense": report.totalExpense,
   }];
 
@@ -150,42 +155,42 @@ const ReportPage: React.FC = () => {
 
               {selectedPeriod === "custom" && (
                 <div className="w-full sm:w-auto">
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className="flex items-center justify-start w-full sm:w-auto gap-2"
-                    >
-                      <CalendarIcon className="h-4 w-4" />
-                      {dateRange.from && dateRange.to ? (
-                        <>
-                          {format(dateRange.from, "LLL dd, yyyy")} →{" "}
-                          {format(dateRange.to, "LLL dd, yyyy")}
-                        </>
-                      ) : (
-                        <span>Select date range</span>
-                      )}
-                    </Button>
-                  </PopoverTrigger>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="flex items-center justify-start w-full sm:w-auto gap-2"
+                      >
+                        <CalendarIcon className="h-4 w-4" />
+                        {dateRange.from && dateRange.to ? (
+                          <>
+                            {format(dateRange.from, "LLL dd, yyyy")} →{" "}
+                            {format(dateRange.to, "LLL dd, yyyy")}
+                          </>
+                        ) : (
+                          <span>Select date range</span>
+                        )}
+                      </Button>
+                    </PopoverTrigger>
 
-                  <PopoverContent className="p-0">
-                    <Calendar
-                      mode="range"
-                      selected={dateRange}
-                      onSelect={(range) => {
-                        setDateRange(range);
-                        setIsCustom(true);
+                    <PopoverContent className="p-0">
+                      <Calendar
+                        mode="range"
+                        selected={dateRange}
+                        onSelect={(range) => {
+                          setDateRange(range);
+                          setIsCustom(true);
 
-                        if (range?.from && range?.to) {
-                          setStartDate(format(range.from, "yyyy-MM-dd"));
-                          setEndDate(format(range.to, "yyyy-MM-dd"));
-                        }
-                      }}
-                      numberOfMonths={2}
-                      className="rounded-md border"
-                    />
-                  </PopoverContent>
-                </Popover>
+                          if (range?.from && range?.to) {
+                            setStartDate(format(range.from, "yyyy-MM-dd"));
+                            setEndDate(format(range.to, "yyyy-MM-dd"));
+                          }
+                        }}
+                        numberOfMonths={2}
+                        className="rounded-md border"
+                      />
+                    </PopoverContent>
+                  </Popover>
                 </div>
               )}
 
@@ -194,10 +199,15 @@ const ReportPage: React.FC = () => {
           </CardHeader>
 
           <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
               <div className="bg-muted p-3 rounded-lg">
                 <div className="text-muted-foreground text-sm mb-1">Production</div>
                 <div className="text-2xl font-bold">{report.productionQuantity || 0} pcs</div>
+              </div>
+
+              <div className="bg-muted p-3 rounded-lg">
+                <div className="text-muted-foreground text-sm mb-1">Finished Pieces</div>
+                <div className="text-2xl font-bold">{finishedPieces || 0} pcs</div>
               </div>
 
               <div className="bg-muted p-3 rounded-lg">
@@ -205,10 +215,7 @@ const ReportPage: React.FC = () => {
                 <div className="text-2xl font-bold">₹{(report.totalExpense || 0).toLocaleString()}</div>
               </div>
 
-              <div className="bg-muted p-3 rounded-lg">
-                <div className="text-muted-foreground text-sm mb-1">Raw Material</div>
-                <div className="text-2xl font-bold">₹{(report.rawMaterialCost || 0).toLocaleString()}</div>
-              </div>
+
 
               <div className="bg-muted p-3 rounded-lg">
                 <div className="text-muted-foreground text-sm mb-1">Efficiency</div>
@@ -225,7 +232,6 @@ const ReportPage: React.FC = () => {
                   <Tooltip />
                   <Legend />
                   <Bar dataKey="Operation Expense" fill="#4F46E5" />
-                  <Bar dataKey="Raw Material Cost" fill="#10b981" />
                   <Bar dataKey="Total Expense" fill="#F59E0B" />
                 </BarChart>
               </ResponsiveContainer>

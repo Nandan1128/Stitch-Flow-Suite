@@ -157,8 +157,7 @@ export const calculateCustomReport = (
 
     const productionQuantity = rows.reduce((s, r) => s + r.pieces_done, 0);
     const operationExpense = rows.reduce((s, r) => s + r.earnings, 0);
-    const rawMaterialCost = productionQuantity * costPerPiece;
-    const totalExpense = rawMaterialCost + operationExpense;
+    const totalExpense = operationExpense;
 
     const efficiency = rows.length > 0
         ? Math.round((productionQuantity / (rows.length * 10)) * 100)
@@ -167,7 +166,6 @@ export const calculateCustomReport = (
     return {
         productionQuantity,
         operationExpense,
-        rawMaterialCost,
         totalExpense,
         efficiency,
     };
@@ -187,7 +185,7 @@ export const calculateProductionReport = (
     // rawMaterialCost is domain-specific; we try to infer: if production has total_quantity & product data, you can replace
     const rawMaterialCost = productionQuantity * costPerPiece; // placeholder — calculate from product master or external table if available
 
-    const totalExpense = rawMaterialCost + operationExpense;
+    const totalExpense = operationExpense;
 
     // simple efficiency metric if you have target/ability: for now compute as pieces per operation * 100 / arbitrary target
     const efficiency = productionQuantity > 0
@@ -197,7 +195,6 @@ export const calculateProductionReport = (
     return {
         productionQuantity,
         operationExpense,
-        rawMaterialCost,
         totalExpense,
         efficiency,
     };
@@ -234,22 +231,147 @@ export const calculateWorkerPerformance = (salaries: any[], period: Period) => {
         earnings: m.earnings,
     }));
 };
-// Fetch cost for a product
-export const fetchProductCost = async (productId: string) => {
-    if (!productId) return { costPerPiece: 0 };
+// // Fetch cost for a product
+// export const fetchProductCost = async (productId: string) => {
+//     if (!productId) return { costPerPiece: 0 };
 
-    const { data, error } = await supabase
-        .from("products")
-        .select("material_cost, thread_cost, other_costs")
-        .eq("id", productId)
-        .single();
+//     const { data, error } = await supabase
+//         .from("products")
+//         .select("material_cost, thread_cost, other_costs")
+//         .eq("id", productId)
+//         .single();
 
-    if (error) return { costPerPiece: 0 };
+//     if (error) return { costPerPiece: 0 };
 
-    const costPerPiece =
-        Number(data.material_cost ?? 0) +
-        Number(data.thread_cost ?? 0) +
-        Number(data.other_costs ?? 0);
+//     const costPerPiece =
+//         Number(data.material_cost ?? 0) +
+//         Number(data.thread_cost ?? 0) +
+//         Number(data.other_costs ?? 0);
 
-    return { costPerPiece };
+//     return { costPerPiece };
+// };
+
+/**
+ * Calculate finished pieces for a production
+ * A finished piece is counted when ALL operations have been completed for that quantity
+ * Returns the minimum quantity across all operations (bottleneck operation)
+ */
+export const calculateFinishedPieces = (operations: any[], productId: string) => {
+    if (!operations || operations.length === 0) return 0;
+
+    // Group operations by operation_id and sum the pieces_done
+    const operationTotals: Record<string, number> = {};
+
+    operations.forEach((op) => {
+        const opId = op.operation_id || op.operations?.id;
+        if (opId) {
+            operationTotals[opId] = (operationTotals[opId] || 0) + (Number(op.pieces_done) || 0);
+        }
+    });
+
+    // If no operations have been done, return 0
+    const totals = Object.values(operationTotals);
+    if (totals.length === 0) return 0;
+
+    // The minimum across all operations is the number of finished pieces
+    // Because all operations must be completed for a piece to be finished
+    return Math.min(...totals);
 };
+
+
+/**
+ * Fetch operation-wise report data
+ * Returns all production operations with product name, PO number, operation name, and worker name
+ */
+export const fetchOperationWiseReport = async () => {
+    // 1. Fetch all production_operation rows
+    const { data: opsRows, error: opsErr } = await supabase
+        .from("production_operation")
+        .select("*")
+        .order("date", { ascending: false });
+
+    if (opsErr) throw opsErr;
+    const rows = opsRows || [];
+
+    if (rows.length === 0) return [];
+
+    // 2. Collect IDs for related data
+    const productionIds = Array.from(new Set(rows.map((r: any) => r.production_id).filter(Boolean)));
+    const operationIds = Array.from(new Set(rows.map((r: any) => r.operation_id).filter(Boolean)));
+    const workerIds = Array.from(new Set(rows.map((r: any) => r.worker_id).filter(Boolean)));
+
+    // 3. Fetch related productions (for po_number and product_id)
+    let productionMap: Record<string, any> = {};
+    if (productionIds.length > 0) {
+        const { data: prods, error: prodErr } = await supabase
+            .from("production")
+            .select("id, po_number, product_id")
+            .in("id", productionIds);
+        if (!prodErr && prods) {
+            prods.forEach((p: any) => { productionMap[p.id] = p; });
+        }
+    }
+
+    // 4. Collect product IDs from the fetched productions
+    const productIds = Array.from(new Set(Object.values(productionMap).map((p: any) => p.product_id).filter(Boolean)));
+
+    // 5. Fetch related products (for name)
+    let productMap: Record<string, string> = {};
+    if (productIds.length > 0) {
+        const { data: products, error: productErr } = await supabase
+            .from("products")
+            .select("id, name")
+            .in("id", productIds as string[]);
+        if (!productErr && products) {
+            products.forEach((p: any) => { productMap[p.id] = p.name; });
+        }
+    }
+
+    // 6. Fetch related operations (for name and rate)
+    let operationMap: Record<string, any> = {};
+    if (operationIds.length > 0) {
+        const { data: ops, error: opErr } = await supabase
+            .from("operations")
+            .select("id, name, amount_per_piece")
+            .in("id", operationIds);
+        if (!opErr && ops) {
+            ops.forEach((o: any) => { operationMap[o.id] = o; });
+        }
+    }
+
+    // 7. Fetch related workers (for name)
+    let workerMap: Record<string, string> = {};
+    if (workerIds.length > 0) {
+        const { data: workers, error: workerErr } = await supabase
+            .from("workers")
+            .select("id, name")
+            .in("id", workerIds);
+        if (!workerErr && workers) {
+            workers.forEach((w: any) => { workerMap[w.id] = w.name; });
+        }
+    }
+
+    // 8. Map it all together
+    return rows.map((r: any) => {
+        const prod = productionMap[r.production_id];
+        const productName = prod ? productMap[prod.product_id] : "Unknown Product";
+        const opMaster = operationMap[r.operation_id];
+        const workerName = r.worker_name || (r.worker_id ? workerMap[r.worker_id] : "Unknown Worker");
+
+        return {
+            id: r.id,
+            productName: productName,
+            poNumber: prod?.po_number || "-",
+            operationName: opMaster?.name || "Unknown Operation",
+            workerName: workerName,
+            date: toDate(r.date),
+            quantity: r.pieces_done || 0,
+            rate: opMaster?.amount_per_piece || 0,
+            total: r.earnings || 0,
+            productId: prod?.product_id || null,
+            operationId: r.operation_id || null,
+            workerId: r.worker_id || null,
+        };
+    });
+};
+

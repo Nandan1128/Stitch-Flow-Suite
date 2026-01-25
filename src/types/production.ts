@@ -39,6 +39,7 @@ export interface Production {
   total_quantity: number;
   createdBy: string;
   createdAt: Date;
+  status?: 'active' | 'completed'; // Added status field
   // UI only (NOT stored in DB)
   productName: string;
   operations: ProductionOperation[];   // fetched separately

@@ -21,6 +21,9 @@ import {
   Settings,
   LogOut,
   DollarSign,
+  FileText,
+  Layers,
+  UserCog,
 } from 'lucide-react';
 
 const Sidebar: React.FC = () => {
@@ -32,13 +35,12 @@ const Sidebar: React.FC = () => {
   const handleMenuClick = () => {
     if (isMobile) {
       setOpenMobile(false);
-    } else {
-      setOpen(false);
     }
+    // On desktop, we want to keep the sidebar in its current state (persistent)
   };
 
   return (
-    <SidebarComponent>
+    <SidebarComponent collapsible="icon">
       <SidebarContent>
         <div className="px-3 py-4">
           <div className="flex items-center gap-3 px-2">
@@ -88,7 +90,7 @@ const Sidebar: React.FC = () => {
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
                     <NavLink
-                      to="/employees"
+                      to="/dashboard/employees"
                       onClick={handleMenuClick}
                       className={({ isActive }) =>
                         `transition-all duration-200 hover:translate-x-1 ${isActive ? 'bg-primary/10 text-primary font-medium' : ''}`
@@ -104,13 +106,13 @@ const Sidebar: React.FC = () => {
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
                   <NavLink
-                    to="/workers"
+                    to="/dashboard/workers"
                     onClick={handleMenuClick}
                     className={({ isActive }) =>
                       `transition-all duration-200 hover:translate-x-1 ${isActive ? 'bg-primary/10 text-primary font-medium' : ''}`
                     }
                   >
-                    <Users size={18} />
+                    <UserCog size={18} />
                     <span className="text-primary">Workers</span>
                   </NavLink>
                 </SidebarMenuButton>
@@ -119,7 +121,7 @@ const Sidebar: React.FC = () => {
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
                   <NavLink
-                    to="/products"
+                    to="/dashboard/products"
                     onClick={handleMenuClick}
                     className={({ isActive }) =>
                       `transition-all duration-200 hover:translate-x-1 ${isActive ? 'bg-primary/10 text-primary font-medium' : ''}`
@@ -134,13 +136,13 @@ const Sidebar: React.FC = () => {
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
                   <NavLink
-                    to="/production"
+                    to="/dashboard/production"
                     onClick={handleMenuClick}
                     className={({ isActive }) =>
                       `transition-all duration-200 hover:translate-x-1 ${isActive ? 'bg-primary/10 text-primary font-medium' : ''}`
                     }
                   >
-                    <Calendar size={18} />
+                    <Layers size={18} />
                     <span className="text-primary">Production</span>
                   </NavLink>
                 </SidebarMenuButton>
@@ -149,7 +151,7 @@ const Sidebar: React.FC = () => {
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
                   <NavLink
-                    to="/salary"
+                    to="/dashboard/salary"
                     onClick={handleMenuClick}
                     className={({ isActive }) =>
                       `transition-all duration-200 hover:translate-x-1 ${isActive ? 'bg-primary/10 text-primary font-medium' : ''}`
@@ -165,7 +167,7 @@ const Sidebar: React.FC = () => {
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
                     <NavLink
-                      to="/attendance"
+                      to="/dashboard/attendance"
                       onClick={handleMenuClick}
                       className={({ isActive }) =>
                         `transition-all duration-200 hover:translate-x-1 ${isActive ? 'bg-primary/10 text-primary font-medium' : ''}`
@@ -190,7 +192,7 @@ const Sidebar: React.FC = () => {
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
                   <NavLink
-                    to="/reports"
+                    to="/dashboard/reports"
                     onClick={handleMenuClick}
                     className={({ isActive }) =>
                       `transition-all duration-200 hover:translate-x-1 ${isActive ? 'bg-primary/10 text-primary font-medium' : ''}`
@@ -198,6 +200,20 @@ const Sidebar: React.FC = () => {
                   >
                     <BarChart2 size={18} />
                     <span className="text-primary">Reports</span>
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <NavLink
+                    to="/dashboard/operation-report"
+                    onClick={handleMenuClick}
+                    className={({ isActive }) =>
+                      `transition-all duration-200 hover:translate-x-1 ${isActive ? 'bg-primary/10 text-primary font-medium' : ''}`
+                    }
+                  >
+                    <FileText size={18} />
+                    <span className="text-primary">Operation Report</span>
                   </NavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -215,7 +231,7 @@ const Sidebar: React.FC = () => {
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
                     <NavLink
-                      to="/settings"
+                      to="/dashboard/settings"
                       onClick={handleMenuClick}
                       className={({ isActive }) =>
                         `transition-all duration-200 hover:translate-x-1 ${isActive ? 'bg-primary/10 text-primary font-medium' : ''}`

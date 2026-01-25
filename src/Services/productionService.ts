@@ -106,12 +106,12 @@ export const getProductionById = async (id: string) => {
 };
 
 /**
- * Create production row and automatically copy operations from product's operations
- * into production_operation table (so each production has its own production_operation entries).
+ * Create production row.
+ * No longer auto-creates production_operation rows - they are created on-demand when workers are assigned.
  * Accepts a productionData object matching 'production' table columns.
  */
 export const createProduction = async (productionData: any) => {
-  // 1) insert production
+  // Insert production
   const { data: prodRow, error: insertError } = await supabase
     .from("production")
     .insert(productionData)
@@ -120,38 +120,8 @@ export const createProduction = async (productionData: any) => {
 
   if (insertError) throw insertError;
 
-  const productionId = prodRow.id;
-
-  // 2) fetch operations for this product (operation master table)
-  const { data: ops, error: opError } = await supabase
-    .from("operations")
-    .select("*")
-    .eq("product_id", productionData.product_id);
-
-  if (opError) throw opError;
-
-  // 3) insert production_operation rows
-  if (ops && ops.length > 0) {
-    const formatted = ops.map((o: any) => ({
-      production_cutting_id: null,
-      operation_id: o.id,
-      worker_id: null,
-      worker_name: null,
-      pieces_done: 0,
-      earnings: 0,
-      date: new Date().toISOString().split("T")[0], // date string
-      supervisor_employee_id: null,
-      production_id: productionId,
-      created_at: new Date().toISOString(),
-    }));
-
-    const { error: insertOpsError } = await supabase
-      .from("production_operation")
-      .insert(formatted);
-
-    if (insertOpsError) throw insertOpsError;
-  }
-
+  // Return without creating empty production_operation rows
+  // These will be created on-demand when workers are assigned via ProductionOperationsDialog
   return prodRow;
 };
 
@@ -261,6 +231,157 @@ export const deleteProductionOperation = async (id: string) => {
 
   if (error) throw error;
   return true;
+};
+
+/**
+ * Get operations history for a specific worker
+ */
+export const getOperationsByWorkerId = async (workerId: string) => {
+  // 1. Fetch production_operation rows for the worker
+  const { data: opsRows, error: opsErr } = await supabase
+    .from("production_operation")
+    .select("*")
+    .eq("worker_id", workerId)
+    .order("date", { ascending: false });
+
+  if (opsErr) throw opsErr;
+  const rows = opsRows || [];
+
+  if (rows.length === 0) return [];
+
+  // 2. Collect IDs for related data
+  const productionIds = Array.from(new Set(rows.map((r: any) => r.production_id).filter(Boolean)));
+  const operationIds = Array.from(new Set(rows.map((r: any) => r.operation_id).filter(Boolean)));
+
+  // 3. Fetch related productions (for po_number and product_id)
+  let productionMap: Record<string, any> = {};
+  if (productionIds.length > 0) {
+    const { data: prods, error: prodErr } = await supabase
+      .from("production")
+      .select("id, po_number, product_id")
+      .in("id", productionIds);
+    if (!prodErr && prods) {
+      prods.forEach((p: any) => { productionMap[p.id] = p; });
+    }
+  }
+
+  // 4. Collect product IDs from the fetched productions
+  const productIds = Array.from(new Set(Object.values(productionMap).map((p: any) => p.product_id).filter(Boolean)));
+
+  // 5. Fetch related products (for name)
+  let productMap: Record<string, string> = {};
+  if (productIds.length > 0) {
+    const { data: products, error: productErr } = await supabase
+      .from("products")
+      .select("id, name")
+      .in("id", productIds as string[]);
+    if (!productErr && products) {
+      products.forEach((p: any) => { productMap[p.id] = p.name; });
+    }
+  }
+
+  // 6. Fetch related operations (for name and rate if needed)
+  let operationMap: Record<string, any> = {};
+  if (operationIds.length > 0) {
+    const { data: ops, error: opErr } = await supabase
+      .from("operations")
+      .select("id, name, amount_per_piece")
+      .in("id", operationIds);
+    if (!opErr && ops) {
+      ops.forEach((o: any) => { operationMap[o.id] = o; });
+    }
+  }
+
+  // 7. Map it all together
+  return rows.map((r: any) => {
+    const prod = productionMap[r.production_id];
+    const productName = prod ? productMap[prod.product_id] : "Unknown Product";
+    const opMaster = operationMap[r.operation_id];
+
+    // Calculate rate if possible, or use master rate
+    const rate = opMaster?.amount_per_piece || 0;
+
+    return {
+      id: r.id,
+      productName: productName,
+      operationName: opMaster?.name || "Unknown Operation",
+      date: new Date(r.date),
+      piecesDone: r.pieces_done || 0,
+      ratePerPiece: rate,
+      totalEarning: r.earnings || 0,
+      poNumber: prod?.po_number || "-",
+    };
+  });
+};
+
+/**
+ * Update production status
+ */
+export const updateProductionStatus = async (productionId: string, status: 'active' | 'completed') => {
+  const { error } = await supabase
+    .from("production")
+    .update({ status })
+    .eq("id", productionId);
+
+  if (error) throw error;
+  return true;
+};
+
+/**
+ * Check if all operations are complete for a production and auto-update status
+ * Returns true if status was changed to completed
+ */
+export const checkAndUpdateProductionStatus = async (productionId: string) => {
+  // 1. Get production details
+  const { data: production, error: prodErr } = await supabase
+    .from("production")
+    .select("id, total_quantity, product_id, status")
+    .eq("id", productionId)
+    .single();
+
+  if (prodErr || !production) return false;
+
+  // If already completed, no need to check
+  if (production.status === 'completed') return false;
+
+  // 2. Get all operations for this product
+  const { data: productOps, error: productOpsErr } = await supabase
+    .from("operations")
+    .select("id")
+    .eq("product_id", production.product_id);
+
+  if (productOpsErr || !productOps || productOps.length === 0) return false;
+
+  const requiredOperationIds = productOps.map((op: any) => op.id);
+
+  // 3. Get production_operation totals for each operation
+  const { data: opsData, error: opsErr } = await supabase
+    .from("production_operation")
+    .select("operation_id, pieces_done")
+    .eq("production_id", productionId);
+
+  if (opsErr) return false;
+
+  // 4. Calculate total pieces for each operation
+  const operationTotals: Record<string, number> = {};
+  (opsData || []).forEach((op: any) => {
+    const opId = op.operation_id;
+    operationTotals[opId] = (operationTotals[opId] || 0) + (Number(op.pieces_done) || 0);
+  });
+
+  // 5. Check if ALL required operations have reached the total_quantity
+  const allOperationsComplete = requiredOperationIds.every(opId => {
+    const total = operationTotals[opId] || 0;
+    return total >= production.total_quantity;
+  });
+
+  // 6. Update status if all operations are complete
+  if (allOperationsComplete) {
+    await updateProductionStatus(productionId, 'completed');
+    return true;
+  }
+
+  return false;
 };
 
 
