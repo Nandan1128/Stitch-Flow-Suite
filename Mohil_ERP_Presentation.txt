@@ -1,0 +1,119 @@
+
+Mohil ERP Project Presentation
+=============================
+
+Slide 1: Title Slide
+--------------------
+- Project Name: Mohil ERP
+- Subtitle: Seamless Enterprise Resource Planning
+- Your name & date
+- [Insert logo or dashboard screenshot]
+
+Slide 2: Introduction
+---------------------
+Mohil ERP is a modern solution for managing all business resources – people, products, and processes – in one elegant web app.
+[Visual: App logo or welcome UI]
+
+Slide 3: Vision & Objectives
+----------------------------
+- Why Mohil ERP? (Streamline operations, empower teams, automate routines)
+- Key Goals: centralization, accessibility, insights
+[Visual: Simple workflow/process diagram]
+
+Slide 4: User Roles & Access
+----------------------------
+- Roles: Admin, Supervisor, Employee, Worker
+- Authentication & route protection
+[Visual: Login page screenshot, sidebar with role-based options]
+
+Slide 5: Feature Overview
+--------------------------
+- Employees, Workers, Products, Production, Salaries, Reports
+[Visual: Summary icons/table]
+
+Slide 6: Employees Module
+--------------------------
+- Add, view, edit, and manage employees
+- Search and filter capabilities
+[Visual: Employees table screenshot, Add Employee dialog screenshot]
+
+Slide 7: Workers Module
+-----------------------
+- Register, update, and manage workers
+- View profiles, assign operations
+[Visual: Workers table screenshot]
+
+Slide 8: Products & Production
+------------------------------
+- Setup products: Design, cost, operations
+- Manage production batches and status
+[Visual: Product/Production screen screenshot]
+
+Slide 9: Salary Management
+--------------------------
+- Worker salaries via operations & piece-rate
+- Employee monthly salaries and payment status
+[Visual: Salary screen/table screenshot]
+
+Slide 10: Reporting & Analytics
+-------------------------------
+- Production stats, costs, efficiency breakdown
+- Employee performance and period-wise reports
+[Visual: Bar/column charts & report tables]
+
+Slide 11: Smart Navigation & UI
+-------------------------------
+- Sidebar navigation, responsive layout
+- Tabs, dialogs, inline toasts for feedback
+[Visual: Sidebar open/closed, mobile view screenshots]
+
+Slide 12: Technology Stack
+--------------------------
+- React, TypeScript, Vite, Tailwind, shadcn/ui, Lucide, React Query, Zod, etc.
+[Visual: Tech stack logos]
+
+Slide 13: Architecture & Components
+-----------------------------------
+- Modular code structure, reusable components
+- Context/state providers: Auth, Sidebar, Toast
+[Visual: Component diagram or folder structure screenshot]
+
+Slide 14: Implementation Highlights
+-----------------------------------
+- Example: Dialog/form reuse
+- Role-based views (Admin vs Supervisor)
+- Toasts for action feedback
+[Visual: Code snippet/screenshot of a form or dialog]
+
+Slide 15: Security & Validation
+-------------------------------
+- Authentication / Authorization
+- Input validation (Zod)
+- Route protection
+[Visual: Login/error validation screenshot]
+
+Slide 16: Demo & User Flow
+--------------------------
+- User flow: Login → Dashboard → Navigation → Add/edit actions
+[Visual: Sequence of annotated UI screenshots]
+
+Slide 17: Future Enhancement Roadmap
+------------------------------------
+- Backend API/database integration
+- Deeper analytics & custom reports
+- Activity logs, notifications
+- Mobile app support
+[Visual: Simple roadmap graphic]
+
+Slide 18: Questions & Contact
+-----------------------------
+Thank you!  
+Questions?  
+[Your contact info / email]
+
+------------------------------------
+**How to collect screenshots:**
+1. Open your app preview for each section.
+2. On Windows: use Snipping Tool or Win+Shift+S.  
+   On Mac: use Cmd+Shift+4.
+3. Save each and insert on the corresponding PPT slide.

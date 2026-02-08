@@ -1,0 +1,206 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ==== THEME COLOR VARIABLES ==== */
+:root {
+  /* Brand palette for Tailwind custom colors */
+  /* 
+    Project gradient: from-[#065f46] (green), via-[#1e3a8a] (blue), to-[#ea580c] (orange) 
+    We'll use #0fb981 as the base primary for compatible usage. 
+  */
+  --primary: 160 91% 35%;            /* #065f46 (dark green for primary) */
+  --primary-foreground: 30 100% 97%; /* A light off-white/orange background for contrast */
+  --secondary: 222 74% 42%;          /* blue: #1e3a8a */
+  --secondary-foreground: 0 0% 100%;
+  --accent: 27 98% 54%;              /* orange: #ea580c */
+  --accent-foreground: 0 0% 100%;
+
+  --destructive: 1 82% 61%;
+  --destructive-foreground: 0 0% 100%;
+
+  --muted: 216 15% 80%;
+  --muted-foreground: 215 15% 25%;
+
+  --background: 210 40% 98%;
+  --foreground: 210 20% 20%;
+
+  --border: 215 13% 91%;
+  --input: 210 40% 96%;
+  --ring: 27 98% 54%;
+
+  --popover: 0 0% 100%;
+  --popover-foreground: 210 20% 15%;
+
+  --card: 0 0% 100%;
+  --card-foreground: 210 20% 18%;
+
+  /* Sidebar custom */
+  --sidebar-background: 160 91% 35%;
+  --sidebar-foreground: 30 100% 97%;
+  --sidebar-primary: 222 74% 42%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 27 98% 54%;
+  --sidebar-accent-foreground: 0 0% 100%;
+  --sidebar-border: 168 54% 82%;
+  --sidebar-ring: 27 98% 54%;
+
+  --radius: 0.5rem;
+}
+
+#root {
+  width: 100%;
+}
+
+/* Project-wide background gradient utility class you can use on any element for the project gradient */
+.bg-project-gradient {
+  background-image: linear-gradient(90deg, #065f46 0%, #1e3a8a 60%, #ea580c 100%);
+}
+
+.text-project-gradient {
+  background: linear-gradient(90deg, #065f46 0%, #1e3a8a 60%, #ea580c 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Reset: Pure White Background */
+body {
+  background: #fff !important;
+  color: hsl(var(--foreground));
+}
+
+/* Remove animated card/section background */
+.card,
+.dashboard-card {
+  background: #fff;
+}
+
+.section-gradient {
+  background: #fff;
+  border-radius: var(--radius);
+  border: 1.5px solid #e5e7eb; /* soft gray border */
+}
+
+/* Sidebar: keep it white and text neutral (except project name/logo) */
+.sidebar,
+[data-sidebar="sidebar"] {
+  background: #fff !important;
+  color: #222 !important;
+  box-shadow: none !important;
+}
+
+/* Remove any background color on sidebar menu/buttons, unless active or button-gradient */
+.sidebar [data-sidebar="menu-button"]:not(.button-gradient),
+[data-sidebar="menu-button"]:not(.button-gradient) {
+  background: transparent !important;
+  color: #222 !important;
+}
+
+.sidebar [data-sidebar="menu-button"]:hover:not(.button-gradient),
+[data-sidebar="menu-button"]:hover:not(.button-gradient),
+.sidebar [data-sidebar="menu-button"]:focus-visible:not(.button-gradient),
+[data-sidebar="menu-button"]:focus-visible:not(.button-gradient) {
+  background: #f5f5f5 !important;
+  color: #111 !important;
+}
+
+.sidebar [data-sidebar="menu-button"][data-active="true"]:not(.button-gradient),
+[data-sidebar="menu-button"][data-active="true"]:not(.button-gradient) {
+  background: #f0fdfa !important; /* a subtle mint highlight, optional: you can set to #fff too */
+  color: #0891b2 !important; /* subtle teal for active, or fallback to #222 */
+  font-weight: 500;
+}
+
+.sidebar [data-sidebar="group-label"],
+[data-sidebar="group-label"] {
+  color: #333 !important;
+}
+
+/* Keep project name/logo gradient */
+.sidebar h1,
+.sidebar .logo {
+  background: linear-gradient(90deg, #14b8a6 60%, #2dd4bf 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Project logo box keeps gradient border/visual focus */
+.logo {
+  height: 6em;
+  padding: 1.5em;
+  will-change: filter;
+  transition: filter 300ms;
+  border-radius: 1.5em;
+  border: 2px solid transparent;
+  background: linear-gradient(white, white) padding-box,
+    linear-gradient(90deg, #14b8a6, #f472b6, #2dd4bf, #a78bfa, #22d3ee) border-box;
+  box-shadow: 0 2px 32px rgba(20,184,166,0.09);
+}
+.logo:hover {
+  filter: drop-shadow(0 0 2em #14b8a6aa);
+}
+.logo.react:hover {
+  filter: drop-shadow(0 0 2em #61dafbaa);
+}
+
+/* Animations keep as before (for icons/buttons/other elements) */
+@keyframes move-horizontal {
+  0% {
+    transform: translateX(16px);
+  }
+  100% {
+    transform: translateX(-16px);
+  }
+}
+.animate-move-horizontal {
+  animation: move-horizontal 1.2s linear infinite alternate;
+}
+
+@keyframes fade-in {
+  0% {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .6; }
+}
+.pulse {
+  animation: pulse 2s cubic-bezier(0.4,0,0.6,1) infinite;
+}
+
+/* Buttons: keep gradient for ".button-gradient" only */
+.button-gradient {
+  background: linear-gradient(90deg, #14b8a6, #34d399, #f472b6, #2dd4bf, #a78bfa, #22d3ee);
+  background-size: 350% 350%;
+  animation: vibrant-gradient-move 8s ease-in-out infinite alternate;
+  color: white !important;
+}
+
+.theme-transition {
+  transition: background 0.4s, color 0.2s;
+}
+
+/* Soft shadow helper */
+.soft-shadow {
+  box-shadow: 0 4px 32px 0 rgba(20,184,166,0.14);
+}
+
+/* Remove animated background (was used in body and .button-gradient only) */
+@keyframes vibrant-gradient-move {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 100% 50%;
+  }
+}
