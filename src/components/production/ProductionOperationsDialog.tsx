@@ -54,6 +54,7 @@ interface Props {
 const ProductionOperationsDialog: React.FC<Props> = ({ open, onOpenChange, production, availableWorkers, onAssignWorker }) => {
   const { toast } = useToast();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const isMobile = useIsMobile(); // Moved to top-level to fix hook rules
   const [ops, setOps] = useState<any[]>([]);
   const [opMasters, setOpMasters] = useState<any[]>([]);
@@ -179,7 +180,7 @@ const ProductionOperationsDialog: React.FC<Props> = ({ open, onOpenChange, produ
               amount_per_piece: Number(amountPerPiece || 0),
               total_amount: total,
               date: payload.date,
-              created_by: user?.id ?? null,
+              created_by: payload.entered_by, // Pass name, not UUID
             });
           }
         } catch (err) {
@@ -247,7 +248,7 @@ const ProductionOperationsDialog: React.FC<Props> = ({ open, onOpenChange, produ
                 amount_per_piece: Number(amountPerPiece || 0),
                 total_amount: total,
                 date: new Date().toISOString(),
-                created_by: user?.id ?? null,
+                created_by: enteredBy,
               });
             }
           } else if (oldWorkerId) {
@@ -264,7 +265,7 @@ const ProductionOperationsDialog: React.FC<Props> = ({ open, onOpenChange, produ
               amount_per_piece: Number(amountPerPiece || 0),
               total_amount: total,
               date: new Date().toISOString(),
-              created_by: user?.id ?? null,
+              created_by: enteredBy,
             });
           }
         }
@@ -406,7 +407,7 @@ const ProductionOperationsDialog: React.FC<Props> = ({ open, onOpenChange, produ
               <div>
                 <div className="text-sm font-medium">{o.operations?.name ?? o.operation_id}</div>
                 <div className="text-xs text-muted-foreground">
-                  Worker: {o.worker_name ?? "none"} · Pieces: {o.pieces_done} · Date: {o.date}
+                  Worker: {o.worker_name ?? "none"} · Pieces: {o.pieces_done} · Date: {o.date} · Entered by: {o.enteredBy ?? o.entered_by ?? "-"}
                 </div>
               </div>
               <DropdownMenu modal={false}>

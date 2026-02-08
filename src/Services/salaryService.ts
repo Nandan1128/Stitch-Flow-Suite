@@ -174,6 +174,7 @@ export const getWorkerOperations = async (workerId: string, month?: number, year
             // ID fields needed for update/delete
             workerId: r.worker_id,
             operationId: r.operation_id, // master operation ID
+            enteredBy: r.entered_by,
         };
     });
 };
@@ -423,6 +424,7 @@ export const addWorkerSalary = async (payload: {
         paid: false,
         paid_date: null,
         created_at: new Date().toISOString(),
+        entered_by: payload.created_by, // Save creator name
     };
 
     try {

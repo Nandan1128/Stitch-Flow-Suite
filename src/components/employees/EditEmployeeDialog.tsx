@@ -39,6 +39,7 @@ export const EditEmployeeDialog: React.FC<EditEmployeeDialogProps> = ({
     onUpdateEmployee,
 }) => {
     const { toast } = useToast();
+    const isMobile = useIsMobile();
     const [idProofPreview, setIdProofPreview] = useState<string | null>(null);
     const [bankImagePreview, setBankImagePreview] = useState<string | null>(null);
 
@@ -163,8 +164,6 @@ export const EditEmployeeDialog: React.FC<EditEmployeeDialogProps> = ({
     };
 
     if (!employee) return null;
-
-    const isMobile = useIsMobile();
 
     const renderForm = () => (
         <Form {...form}>
@@ -344,23 +343,23 @@ export const EditEmployeeDialog: React.FC<EditEmployeeDialogProps> = ({
                         </div>
                     </TabsContent>
 
-                            {/* BANK TAB */}
-                            <TabsContent value="bank" className="space-y-4">
-                                <div className="border rounded-md p-4">
-                                    <h3 className="text-sm font-medium mb-3">Bank Details</h3>
-                                    <FormField
-                                        control={form.control}
-                                        name="bankAccountDetail"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>Bank Account Details</FormLabel>
-                                                <FormControl>
-                                                    <Input {...field} />
-                                                </FormControl>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
+                    {/* BANK TAB */}
+                    <TabsContent value="bank" className="space-y-4">
+                        <div className="border rounded-md p-4">
+                            <h3 className="text-sm font-medium mb-3">Bank Details</h3>
+                            <FormField
+                                control={form.control}
+                                name="bankAccountDetail"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Bank Account Details</FormLabel>
+                                        <FormControl>
+                                            <Input {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
 
                             <div className="mt-4">
                                 <Label htmlFor="bank-image-edit">Bank Passbook/Cheque</Label>

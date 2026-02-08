@@ -17,11 +17,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
-import { Edit, Lock, MoreVertical, Trash2 } from "lucide-react";
+import { Edit, Lock, MoreVertical, Trash2, Eye, EyeOff } from "lucide-react";
 import { useToast } from '@/components/ui/use-toast';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { SupervisorEditDialog } from './SupervisorEditDialog';
-import { deleteSupervisor } from '@/Services/supervisorService';
+import { deleteSupervisor, updateSupervisorPassword } from '@/Services/supervisorService';
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 interface Supervisor {
   id: string;
@@ -37,7 +39,7 @@ interface SupervisorTableProps {
   onDelete?: (id: string) => void;
 }
 
-export const SupervisorTable: React.FC<SupervisorTableProps> = ({ 
+export const SupervisorTable: React.FC<SupervisorTableProps> = ({
   supervisors,
   onToggleStatus,
   onDelete
@@ -46,11 +48,17 @@ export const SupervisorTable: React.FC<SupervisorTableProps> = ({
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedSupervisor, setSelectedSupervisor] = useState<Supervisor | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [isResetPasswordDialogOpen, setIsResetPasswordDialogOpen] = useState(false);
+
+  // Reuse this dialog state for "See/Change Password"
+  const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleDelete = () => {
     if (!selectedSupervisor) return;
-    
+
     (async () => {
       const res = await deleteSupervisor(selectedSupervisor.id);
       if (res.error) {
@@ -69,23 +77,63 @@ export const SupervisorTable: React.FC<SupervisorTableProps> = ({
 
       onDelete?.(selectedSupervisor.id);
     })();
-    
+
     setIsDeleteDialogOpen(false);
     setSelectedSupervisor(null);
   };
 
-  const handleResetPassword = () => {
+  const handleUpdatePassword = async () => {
     if (!selectedSupervisor) return;
-    
-    // In a real app, this would call an API to reset the password
+    if (!newPassword) {
+      toast({
+        title: "Error",
+        description: "Password cannot be empty",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      toast({
+        title: "Validation Error",
+        description: "Passwords do not match",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const res = await updateSupervisorPassword(selectedSupervisor.id, newPassword);
+
+    if (res.error) {
+      toast({
+        title: "Update Failed",
+        description: res.error?.message ?? "Failed to update password",
+        variant: "destructive"
+      });
+      return;
+    }
+
     toast({
-      title: "Password reset",
-      description: `A password reset email has been sent to ${selectedSupervisor.email}.`,
+      title: "Success",
+      description: "Password updated successfully.",
     });
-    
-    setIsResetPasswordDialogOpen(false);
+
+    setIsPasswordDialogOpen(false);
+    setNewPassword("");
+    setConfirmPassword("");
+    setShowPassword(false);
+    setShowConfirmPassword(false);
     setSelectedSupervisor(null);
   };
+
+  const openPasswordDialog = (supervisor: Supervisor) => {
+    setSelectedSupervisor(supervisor);
+    setNewPassword("");
+    setConfirmPassword("");
+    setShowPassword(false);
+    setShowConfirmPassword(false);
+    setIsPasswordDialogOpen(true);
+  }
 
   return (
     <>
@@ -138,14 +186,11 @@ export const SupervisorTable: React.FC<SupervisorTableProps> = ({
                         <Edit className="mr-2 h-4 w-4" />
                         Edit Details
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => {
-                        setSelectedSupervisor(supervisor);
-                        setIsResetPasswordDialogOpen(true);
-                      }}>
-                        <Lock className="mr-2 h-4 w-4" />
-                        Reset Password
+                      <DropdownMenuItem onClick={() => openPasswordDialog(supervisor)}>
+                        <Eye className="mr-2 h-4 w-4" />
+                        See Password
                       </DropdownMenuItem>
-                      <DropdownMenuItem 
+                      <DropdownMenuItem
                         className="text-destructive focus:text-destructive"
                         onClick={() => {
                           setSelectedSupervisor(supervisor);
@@ -184,26 +229,97 @@ export const SupervisorTable: React.FC<SupervisorTableProps> = ({
         </DialogContent>
       </Dialog>
 
-      {/* Reset Password Dialog */}
-      <Dialog open={isResetPasswordDialogOpen} onOpenChange={setIsResetPasswordDialogOpen}>
-        <DialogContent>
+      {/* View/Update Password Dialog */}
+      <Dialog open={isPasswordDialogOpen} onOpenChange={setIsPasswordDialogOpen}>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Reset Password</DialogTitle>
+            <DialogTitle>Password Details</DialogTitle>
             <DialogDescription>
-              This will send a password reset email to {selectedSupervisor?.email}.
+              Update password for {selectedSupervisor?.name}.
             </DialogDescription>
           </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="current-password">Current Password</Label>
+              <Input
+                id="current-password"
+                value="●●●●●●●●"
+                disabled
+                className="bg-muted text-muted-foreground"
+              />
+              <p className="text-[0.8rem] text-muted-foreground">
+                Existing password is encrypted and cannot be displayed.
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">New Password</Label>
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Enter new password"
+                  className="pr-10"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4 text-muted-foreground" />
+                  ) : (
+                    <Eye className="h-4 w-4 text-muted-foreground" />
+                  )}
+                </Button>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirm-password">Confirm Password</Label>
+              <div className="relative">
+                <Input
+                  id="confirm-password"
+                  type={showConfirmPassword ? "text" : "password"}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Confirm new password"
+                  className="pr-10"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                >
+                  {showConfirmPassword ? (
+                    <EyeOff className="h-4 w-4 text-muted-foreground" />
+                  ) : (
+                    <Eye className="h-4 w-4 text-muted-foreground" />
+                  )}
+                </Button>
+              </div>
+              <p className="text-[0.8rem] text-muted-foreground">
+                Enter a new password directly to change it.
+              </p>
+            </div>
+          </div>
+
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsResetPasswordDialogOpen(false)}>
+            <Button variant="outline" onClick={() => setIsPasswordDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleResetPassword}>
-              Send Reset Email
+            <Button onClick={handleUpdatePassword}>
+              Save New Password
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      
+
       {/* Edit Supervisor Dialog */}
       {selectedSupervisor && (
         <SupervisorEditDialog

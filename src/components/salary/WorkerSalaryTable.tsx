@@ -330,9 +330,11 @@ export const WorkerSalaryTable: React.FC<WorkerSalaryTableProps> = ({
                             Mark as Paid
                           </DropdownMenuItem>
                         )}
-                        <DropdownMenuItem onClick={() => handleDeleteSalary(workerSalary.workerId)} className="text-destructive">
-                          Delete
-                        </DropdownMenuItem>
+                        {user?.role === 'admin' && (
+                          <DropdownMenuItem onClick={() => handleDeleteSalary(workerSalary.workerId)} className="text-destructive">
+                            Delete
+                          </DropdownMenuItem>
+                        )}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
@@ -446,12 +448,14 @@ export const WorkerSalaryTable: React.FC<WorkerSalaryTableProps> = ({
                               Mark as Paid
                             </DropdownMenuItem>
                           )}
-                          <DropdownMenuItem
-                            onClick={() => handleDeleteSalary(workerSalary.workerId)}
-                            className="cursor-pointer text-destructive"
-                          >
-                            Delete
-                          </DropdownMenuItem>
+                          {user?.role === 'admin' && (
+                            <DropdownMenuItem
+                              onClick={() => handleDeleteSalary(workerSalary.workerId)}
+                              className="cursor-pointer text-destructive"
+                            >
+                              Delete
+                            </DropdownMenuItem>
+                          )}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>

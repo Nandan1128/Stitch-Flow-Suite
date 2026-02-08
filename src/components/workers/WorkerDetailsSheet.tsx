@@ -52,7 +52,7 @@ export const WorkerDetailsSheet: React.FC<WorkerDetailsSheetProps> = ({
     profileImageUrl: (worker as any).profile_image_url || worker.profileImageUrl,
     createdAt: (worker as any).created_at || worker.createdAt,
     workerId: (worker as any).worker_code || worker.workerId,
-    createdBy: (worker as any).entered_by || worker.createdBy,
+    createdBy: (worker as any).entered_by || worker.enteredBy || worker.createdBy,
   };
 
   const renderContent = () => (

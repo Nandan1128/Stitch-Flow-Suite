@@ -304,3 +304,43 @@ export const deleteSupervisor = async (id: string): Promise<{ error: any }> => {
         return { error: err };
     }
 };
+
+/**
+ * Update supervisor password
+ */
+export const updateSupervisorPassword = async (
+    employeeId: string,
+    newPassword: string
+): Promise<{ error: any }> => {
+    try {
+        // 1. Hash the new password
+        const passwordHash = await bcrypt.hash(newPassword, 10);
+
+        // 2. Find the app_user linked to this supervisor (employee)
+        const { data: user, error: userFetchError } = await supabase
+            .from('app_users')
+            .select('id')
+            .eq('employee_id', employeeId)
+            .single();
+
+        if (userFetchError || !user) {
+            console.error("User not found for employee:", employeeId);
+            return { error: new Error("User account not found for this supervisor") };
+        }
+
+        // 3. Update the password_hash in app_users
+        const { error: updateError } = await supabase
+            .from('app_users')
+            .update({ password_hash: passwordHash })
+            .eq('id', user.id);
+
+        if (updateError) {
+            return { error: updateError };
+        }
+
+        return { error: null };
+    } catch (err) {
+        console.error("updateSupervisorPassword error:", err);
+        return { error: err };
+    }
+};

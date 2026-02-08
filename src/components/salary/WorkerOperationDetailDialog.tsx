@@ -14,6 +14,7 @@ export type OperationDetail = {
     total?: number;
     workerId?: string;     // Added
     operationId?: string;  // Added (master ID)
+    enteredBy?: string;    // Added
 };
 
 type Props = {
@@ -144,16 +145,18 @@ export const WorkerOperationDetailDialog: React.FC<Props> = ({ open, onClose, wo
                             <tr className="text-left text-sm text-slate-600 dark:text-slate-300">
                                 <th className="px-3 py-2">Product</th>
                                 <th className="px-3 py-2">Date</th>
+
                                 <th className="px-3 py-2 text-right">Pieces</th>
                                 <th className="px-3 py-2 text-right">Rate / piece</th>
                                 <th className="px-3 py-2 text-right">Total</th>
+                                <th className="px-3 py-2">Entered By</th>
                                 <th className="px-3 py-2 text-right">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             {opsToShow.length === 0 ? (
                                 <tr>
-                                    <td colSpan={6} className="px-3 py-6 text-center text-sm text-slate-500">
+                                    <td colSpan={7} className="px-3 py-6 text-center text-sm text-slate-500">
                                         No operations to display
                                     </td>
                                 </tr>
@@ -166,6 +169,7 @@ export const WorkerOperationDetailDialog: React.FC<Props> = ({ open, onClose, wo
                                         <tr key={op.id ?? i} className="border-t">
                                             <td className="px-3 py-3 align-middle">{op.productName}</td>
                                             <td className="px-3 py-3 align-middle">{fmtDate(op.date)}</td>
+
 
                                             <td className="px-3 py-3 align-middle text-right">
                                                 {isEditing ? (
@@ -187,6 +191,9 @@ export const WorkerOperationDetailDialog: React.FC<Props> = ({ open, onClose, wo
                                                     ? fmtCurrency(editPieces * op.ratePerPiece)
                                                     : fmtCurrency(total)
                                                 }
+                                            </td>
+                                            <td className="px-3 py-3 align-middle text-sm text-muted-foreground capitalize">
+                                                {op.enteredBy || "-"}
                                             </td>
 
                                             <td className="px-3 py-3 align-middle text-right">
