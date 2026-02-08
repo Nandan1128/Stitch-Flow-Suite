@@ -1,12 +1,5 @@
 import { supabase } from "@/Config/supabaseClient";
-import { BarChart } from "lucide-react";
-import bcrypt from "bcryptjs"
-
-// Fix bcrypt random for browser
-bcrypt.setRandomFallback((len) => {
-    const buf = new Uint8Array(len);
-    return Array.from(window.crypto.getRandomValues(buf));
-});
+// Fix bcrypt random for browser (legacy code removed)
 
 export interface Supervisor {
     id: string;
@@ -82,7 +75,31 @@ export const addSupervisor = async (
             }
         }
 
-        console.log("Proceeding to insert employee...");
+        console.log("Proceeding to create Auth User and insert employee...");
+
+        // 1. Sign Up the user in Supabase Auth
+        // NOTE: This might log the admin out if "Confirm Email" is disabled in Supabase.
+        const { data: authData, error: authError } = await supabase.auth.signUp({
+            email: payload.email!,
+            password: payload.password || "password123", // Default if missing, though UI should require it
+            options: {
+                data: {
+                    name: payload.name,
+                    role: 'supervisor' // Add metadata
+                }
+            }
+        });
+
+        if (authError) {
+            console.error("Supabase Auth SignUp Error:", authError);
+            return { data: null, error: authError };
+        }
+
+        if (!authData.user) {
+            return { data: null, error: { message: "Failed to create auth user (no user returned)." } };
+        }
+
+        const newUserId = authData.user.id;
 
         // map payload -> employees table columns per provided schema
         const insertRow: any = {
@@ -97,77 +114,62 @@ export const addSupervisor = async (
             id_proof_image_url: payload.id_proof_image_url ?? null,
             bank_account_detail: payload.bank_account_detail ?? null,
             bank_image_url: payload.bank_image_url ?? null,
-            salary_amount:
-                typeof payload.salary_amount === "number" ? payload.salary_amount : null,
-            salary_id: payload.salary_id ?? null,
-            role: payload.role ?? "supervisor",
-            is_supervisor: payload.is_supervisor ?? true,
-            profile_image_url: payload.profile_image_url ?? null,
+            salary_amount: payload.salary_amount ?? 0,
+            // salary_id is NOT in the schema based on your earlier logs, ignoring or putting in if needed
+            role: "supervisor",
             is_active: payload.is_active ?? true,
-            created_at: new Date().toISOString(),
+            profile_image_url: payload.profile_image_url ?? null
         };
 
-
-        const { data: employee, error } = await supabase
+        const { data: empData, error: empError } = await supabase
             .from("employees")
-            .insert([insertRow])
+            .insert(insertRow)
             .select()
             .single();
 
-        if (error) {
-            console.error("Employee insert error:", error);
-            return { data: null, error };
-        }
-        const passwordHash = await bcrypt.hash(payload.password, 10);
-
-        // Ensure employee exists and has id
-        if (!employee || !employee.id) {
-            const e = new Error("Employee record missing id after insert");
-            console.error(e);
-            return { data: null, error: e };
+        if (empError) {
+            console.error("Error inserting employee:", empError);
+            // ROLLBACK Auth user if possible? Hard to do from client without service role. implies manual cleanup.
+            return { data: null, error: empError };
         }
 
-        // 2️⃣ Create login user in app_users via RPC
-        console.log("Calling create_supervisor_user RPC with:", {
-            p_name: payload.name,
-            p_email: payload.email,
-            p_employee_id: employee.id,
-            p_password: "REDACTED",
-        });
+        const newEmployee = empData;
 
-        const { data: user, error: userError } = await supabase.rpc(
-            "create_supervisor_user",
-            {
-                p_name: payload.name, // Re-added p_name
-                p_email: payload.email,
-                p_password: payload.password, // Pass plaintext - SQL function hashes it
-                p_employee_id: employee.id,
-            }
-        );
+        // 3. Insert into app_users
+        // We use the Auth User ID as the app_users.id to link them
+        const appUserRow = {
+            id: newUserId, // LINK TO AUTH USER
+            username: payload.name,
+            email: payload.email,
+            // password_hash: hash, // No longer keeping hash
+            role: "supervisor",
+            employee_id: newEmployee.id,
+            created_at: new Date().toISOString()
+        };
+
+        const { data: userData, error: userError } = await supabase
+            .from("app_users")
+            .insert(appUserRow)
+            .select()
+            .single();
 
         if (userError) {
-            console.error("App User RPC Error details:", userError);
-
-            // rollback orphan employee
-            const { error: rollbackError } = await supabase.from("employees").delete().eq("id", employee.id);
-            if (rollbackError) console.error("Rollback failed:", rollbackError);
-
+            console.error("Error inserting app_user:", userError);
             return { data: null, error: userError };
         }
 
-        // return cleaned objects
         return {
             data: {
                 supervisor: {
-                    id: employee.id,
-                    name: employee.name,
-                    email: employee.email,
-                    isActive: employee.is_active ?? true,
-                    createdAt: employee.created_at
-                        ? new Date(employee.created_at)
+                    id: newEmployee.id,
+                    name: newEmployee.name,
+                    email: newEmployee.email,
+                    isActive: newEmployee.is_active ?? true,
+                    createdAt: newEmployee.created_at
+                        ? new Date(newEmployee.created_at)
                         : new Date(),
                 },
-                user: user ?? null,
+                user: userData ?? null,
             },
             error: null,
         };
@@ -313,32 +315,11 @@ export const updateSupervisorPassword = async (
     newPassword: string
 ): Promise<{ error: any }> => {
     try {
-        // 1. Hash the new password
-        const passwordHash = await bcrypt.hash(newPassword, 10);
+        // 1. Hash the new password - REMOVED (Migrated to Supabase Auth)
+        // const passwordHash = await bcrypt.hash(newPassword, 10);
 
-        // 2. Find the app_user linked to this supervisor (employee)
-        const { data: user, error: userFetchError } = await supabase
-            .from('app_users')
-            .select('id')
-            .eq('employee_id', employeeId)
-            .single();
-
-        if (userFetchError || !user) {
-            console.error("User not found for employee:", employeeId);
-            return { error: new Error("User account not found for this supervisor") };
-        }
-
-        // 3. Update the password_hash in app_users
-        const { error: updateError } = await supabase
-            .from('app_users')
-            .update({ password_hash: passwordHash })
-            .eq('id', user.id);
-
-        if (updateError) {
-            return { error: updateError };
-        }
-
-        return { error: null };
+        console.warn("Password update from Admin panel not supported with Supabase Auth (client-side). User must use Forgot Password flow.");
+        return { error: new Error("To reset password, please use the 'Forgot Password' functionality or update via Supabase Dashboard.") };
     } catch (err) {
         console.error("updateSupervisorPassword error:", err);
         return { error: err };

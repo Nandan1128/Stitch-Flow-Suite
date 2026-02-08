@@ -9,14 +9,29 @@ import { FileText, LogIn, ArrowLeft } from 'lucide-react';
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const { login, isLoading } = useAuth();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
+
+  // Redirect if already logged in
+  React.useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const success = await login({ email, password });
-    if (success) {
-      navigate('/dashboard');
+    setIsSubmitting(true);
+    try {
+      const success = await login({ email, password });
+      if (success) {
+        navigate('/dashboard');
+      }
+    } catch (err) {
+      console.error("Login submitted error:", err);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -50,7 +65,7 @@ const Login = () => {
           </h1>
           <p className="text-gray-600 mt-2 text-lg">Enterprise Resource Planning System</p>
         </div>
-        
+
         <Card className="shadow-2xl animate-scale-in">
           <CardHeader className="space-y-1">
             <CardTitle className="text-2xl font-bold text-center">Sign In</CardTitle>
@@ -74,7 +89,7 @@ const Login = () => {
                   required
                 />
               </div>
-              
+
               <div className="space-y-2">
                 <label htmlFor="password" className="text-sm font-medium text-gray-700">
                   Password
@@ -90,14 +105,14 @@ const Login = () => {
                 />
               </div>
             </CardContent>
-            
+
             <CardFooter>
-              <Button 
-                type="submit" 
-                className="w-full h-11 text-base transition-all hover:scale-[1.01]" 
-                disabled={isLoading}
+              <Button
+                type="submit"
+                className="w-full h-11 text-base transition-all hover:scale-[1.01]"
+                disabled={isSubmitting}
               >
-                {isLoading ? (
+                {isSubmitting ? (
                   <span className="flex items-center justify-center space-x-2">
                     <span className="animate-spin h-5 w-5 border-t-2 border-b-2 border-current rounded-full" />
                     <span>Signing In...</span>
