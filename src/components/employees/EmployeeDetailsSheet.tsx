@@ -41,6 +41,7 @@ export const EmployeeDetailsSheet: React.FC<EmployeeDetailsSheetProps> = ({
   readOnly = false,
 }) => {
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   const [idProofPreview, setIdProofPreview] = useState<string | null>(null);
   const [bankImagePreview, setBankImagePreview] = useState<string | null>(null);
 
@@ -164,7 +165,6 @@ export const EmployeeDetailsSheet: React.FC<EmployeeDetailsSheetProps> = ({
   // If no employee selected, render nothing (same as before)
   if (!employee) return null;
 
-  const isMobile = useIsMobile();
   const disabled = Boolean(readOnly);
 
   // Render form function to be used in both Drawer (mobile) and Sheet (desktop)
