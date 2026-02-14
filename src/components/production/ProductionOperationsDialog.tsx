@@ -39,8 +39,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { MoreVertical, Pencil, Trash2 } from "lucide-react";
+import { MoreVertical, Pencil, Trash2, Plus, X } from "lucide-react";
 import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 
 interface Props {
@@ -64,6 +65,121 @@ const ProductionOperationsDialog: React.FC<Props> = ({ open, onOpenChange, produ
   const [pieces, setPieces] = useState<number>(0);
   const [editingOperation, setEditingOperation] = useState<any | null>(null);
   const [deletingOperationId, setDeletingOperationId] = useState<string | null>(null);
+
+  const [activeTab, setActiveTab] = useState("single");
+  const [bulkWorkerId, setBulkWorkerId] = useState<string | null>(null);
+  const [bulkOps, setBulkOps] = useState<{ id: string; masterOpId: string | null; pieces: number }[]>([
+    { id: "init-1", masterOpId: null, pieces: 0 }
+  ]);
+
+  const handleBulkAddRow = () => {
+    setBulkOps([...bulkOps, { id: crypto.randomUUID(), masterOpId: null, pieces: 0 }]);
+  };
+
+  const handleBulkRemoveRow = (id: string) => {
+    if (bulkOps.length > 1) {
+      setBulkOps(bulkOps.filter(r => r.id !== id));
+    }
+  };
+
+  const handleBulkUpdateRow = (id: string, field: 'masterOpId' | 'pieces', value: any) => {
+    setBulkOps(bulkOps.map(r => r.id === id ? { ...r, [field]: value } : r));
+  };
+
+  const handleBulkSubmit = async () => {
+    if (!production || !bulkWorkerId) {
+      toast({ title: "Validation Error", description: "Please select a worker.", variant: "destructive" });
+      return;
+    }
+
+    const validRows = bulkOps.filter(r => r.masterOpId && r.pieces > 0);
+    if (validRows.length === 0) {
+      toast({ title: "Validation Error", description: "Please add at least one valid operation with quantity.", variant: "destructive" });
+      return;
+    }
+
+    try {
+      const workerList = (availableWorkers && availableWorkers.length > 0) ? availableWorkers : fetchedWorkers;
+      const worker = workerList.find((w: any) => w.id === bulkWorkerId);
+      const workerName = worker ? worker.name : null;
+      const enteredBy = user?.name ?? user?.email ?? user?.id ?? "system";
+      const dateStr = new Date().toISOString().split("T")[0];
+      const dateTimeStr = new Date().toISOString();
+
+      let successCount = 0;
+
+      for (const row of validRows) {
+        // 1. Get Master Op
+        const master = opMasters.find(m => m.id === row.masterOpId);
+        if (!master) continue;
+
+        const amountPerPiece = master.amount_per_piece || 0;
+        const totalAmount = row.pieces * amountPerPiece;
+
+        // 2. Insert Production Operation
+        const payload = {
+          operation_id: row.masterOpId,
+          worker_id: bulkWorkerId,
+          worker_name: workerName || null,
+          pieces_done: row.pieces,
+          earnings: totalAmount,
+          date: dateStr,
+          supervisor_employee_id: null,
+          production_id: production.id,
+          created_at: dateTimeStr,
+          entered_by: enteredBy,
+        };
+
+        await insertProductionOperation(payload);
+
+        // 3. Add Salary
+        try {
+          const salaryResult = await addWorkerSalary({
+            worker_id: bulkWorkerId,
+            product_id: (production as any).product_id ?? null,
+            operation_id: row.masterOpId,
+            pieces_done: row.pieces,
+            amount_per_piece: amountPerPiece,
+            total_amount: totalAmount,
+            date: dateStr,
+            created_by: enteredBy,
+          });
+          if (salaryResult?.error) {
+            console.error("Salary creation failed:", salaryResult.error);
+            toast({
+              title: "Warning",
+              description: `Salary record creation failed for ${workerName || 'worker'}: ${salaryResult.error.message}`,
+              variant: "destructive"
+            });
+          }
+        } catch (salErr: any) {
+          console.error("Salary sync exception for bulk row:", salErr);
+          toast({
+            title: "Warning",
+            description: `Salary record creation failed: ${salErr.message || 'Unknown error'}`,
+            variant: "destructive"
+          });
+        }
+
+        successCount++;
+      }
+
+      toast({ title: "Success", description: `Added ${successCount} operations successfully.` });
+
+      // Refresh
+      const refreshed = await getOperationsByProductionId(production.id);
+      setOps(refreshed || []);
+      await checkAndUpdateProductionStatus(production.id);
+
+      // Reset Bulk Form
+      setBulkOps([{ id: crypto.randomUUID(), masterOpId: null, pieces: 0 }]);
+      setBulkWorkerId(null);
+
+    } catch (err: any) {
+      console.error(err);
+      toast({ title: "Error", description: "Failed to save bulk operations.", variant: "destructive" });
+    }
+  };
 
   useEffect(() => {
     if (!production) {
@@ -145,7 +261,7 @@ const ProductionOperationsDialog: React.FC<Props> = ({ open, onOpenChange, produ
         return;
       }
 
-      if (selectedOpId && selectedOpId.startsWith("master:")) {
+      if (!editingOperation && selectedOpId && selectedOpId.startsWith("master:")) {
         const masterId = selectedOpId.split(":")[1];
         const master = opMasters.find(m => m.id === masterId);
         const workerList = (availableWorkers && availableWorkers.length > 0) ? availableWorkers : fetchedWorkers;
@@ -172,7 +288,7 @@ const ProductionOperationsDialog: React.FC<Props> = ({ open, onOpenChange, produ
           if (selectedWorkerId && Number(pieces) > 0) {
             const amountPerPiece = master?.amount_per_piece ?? master?.rate ?? 0;
             const total = (Number(pieces) || 0) * Number(amountPerPiece || 0);
-            await addWorkerSalary({
+            const salaryResult = await addWorkerSalary({
               worker_id: selectedWorkerId,
               product_id: (production as any).product_id ?? null,
               operation_id: masterId,
@@ -182,9 +298,22 @@ const ProductionOperationsDialog: React.FC<Props> = ({ open, onOpenChange, produ
               date: payload.date,
               created_by: payload.entered_by, // Pass name, not UUID
             });
+            if (salaryResult?.error) {
+              console.error("Salary creation failed:", salaryResult.error);
+              toast({
+                title: "Warning",
+                description: `Production record created but salary record failed: ${salaryResult.error.message}`,
+                variant: "destructive"
+              });
+            }
           }
-        } catch (err) {
-          console.warn("Salary sync failed", err);
+        } catch (err: any) {
+          console.error("Salary sync failed:", err);
+          toast({
+            title: "Warning",
+            description: `Production record created but salary record failed: ${err.message || 'Unknown error'}`,
+            variant: "destructive"
+          });
         }
 
         const refreshed = await getOperationsByProductionId(production.id);
@@ -224,7 +353,7 @@ const ProductionOperationsDialog: React.FC<Props> = ({ open, onOpenChange, produ
       const amountPerPiece = opBefore?.operations?.amount_per_piece ?? opBefore?.rate_per_piece ?? opBefore?.rate ?? 0;
       const earningsValue = (Number(pieces) || 0) * Number(amountPerPiece || 0);
 
-      const res = await assignWorkerToOperation(production.id, targetOpId, selectedWorkerId || null, pieces || 0, workerName || null);
+      const res = await assignWorkerToOperation(production.id, targetOpId, selectedWorkerId || null, pieces || 0, workerName || null, enteredBy, earningsValue);
       toast({ title: "Saved", description: "Operation updated" });
 
       try {
@@ -240,7 +369,7 @@ const ProductionOperationsDialog: React.FC<Props> = ({ open, onOpenChange, produ
           if (oldWorkerId && oldWorkerId !== selectedWorkerId) {
             await deleteWorkerSalary(oldWorkerId, masterOpId, oldDate);
             if (Number(pieces) > 0) {
-              await addWorkerSalary({
+              const salaryResult = await addWorkerSalary({
                 worker_id: selectedWorkerId,
                 product_id: (production as any).product_id ?? null,
                 operation_id: masterOpId,
@@ -250,14 +379,30 @@ const ProductionOperationsDialog: React.FC<Props> = ({ open, onOpenChange, produ
                 date: new Date().toISOString(),
                 created_by: enteredBy,
               });
+              if (salaryResult?.error) {
+                console.error("Salary creation failed:", salaryResult.error);
+                toast({
+                  title: "Warning",
+                  description: `Production updated but salary record creation failed: ${salaryResult.error.message}`,
+                  variant: "destructive"
+                });
+              }
             }
           } else if (oldWorkerId) {
-            await updateWorkerSalaryByOps(oldWorkerId, masterOpId, oldDate, {
+            const updateResult = await updateWorkerSalaryByOps(oldWorkerId, masterOpId, oldDate, {
               pieces_done: Number(pieces),
               total_amount: total
             });
+            if (updateResult?.error) {
+              console.error("Salary update failed:", updateResult.error);
+              toast({
+                title: "Warning",
+                description: `Production updated but salary record update failed: ${updateResult.error.message}`,
+                variant: "destructive"
+              });
+            }
           } else if (Number(pieces) > 0) {
-            await addWorkerSalary({
+            const salaryResult = await addWorkerSalary({
               worker_id: selectedWorkerId,
               product_id: (production as any).product_id ?? null,
               operation_id: masterOpId,
@@ -267,14 +412,28 @@ const ProductionOperationsDialog: React.FC<Props> = ({ open, onOpenChange, produ
               date: new Date().toISOString(),
               created_by: enteredBy,
             });
+            if (salaryResult?.error) {
+              console.error("Salary creation failed:", salaryResult.error);
+              toast({
+                title: "Warning",
+                description: `Production updated but salary record creation failed: ${salaryResult.error.message}`,
+                variant: "destructive"
+              });
+            }
           }
         }
-      } catch (err) {
-        console.warn("Salary sync failed", err);
+      } catch (err: any) {
+        console.error("Salary sync failed:", err);
+        toast({
+          title: "Warning",
+          description: `Production updated but salary sync failed: ${err.message || 'Unknown error'}`,
+          variant: "destructive"
+        });
       }
 
       const refreshed = await getOperationsByProductionId(production.id);
       setOps(refreshed || []);
+      queryClient.invalidateQueries({ queryKey: ["operation-report"] });
 
       onAssignWorker && onAssignWorker(production.id, targetOpId, selectedWorkerId || "", pieces || 0);
       await checkAndUpdateProductionStatus(production.id);
@@ -294,6 +453,7 @@ const ProductionOperationsDialog: React.FC<Props> = ({ open, onOpenChange, produ
     setEditingOperation(op);
     setSelectedWorkerId(op.worker_id || null);
     setPieces(op.pieces_done || 0);
+    setSelectedOpId(null);
   };
 
   const confirmDelete = async () => {
@@ -312,6 +472,7 @@ const ProductionOperationsDialog: React.FC<Props> = ({ open, onOpenChange, produ
       const refreshed = await getOperationsByProductionId(production.id);
       setOps(refreshed || []);
       queryClient.invalidateQueries({ queryKey: ["productions"] });
+      queryClient.invalidateQueries({ queryKey: ["operation-report"] });
     } catch (err: any) {
       toast({ title: "Error", description: "Failed to delete", variant: "destructive" });
     } finally {
@@ -321,83 +482,157 @@ const ProductionOperationsDialog: React.FC<Props> = ({ open, onOpenChange, produ
 
   if (!production) return null;
 
+
+
   const renderContent = () => (
     <div className="space-y-4 py-2">
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label>{editingOperation ? "Updating Operation" : "Select Operation"}</Label>
-          {editingOperation ? (
-            <div className="h-9 flex items-center px-3 border rounded-md bg-muted text-sm font-medium">
-              {editingOperation.operations?.name ?? "Unknown Operation"}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-2 mb-4">
+          <TabsTrigger value="single">Single Entry</TabsTrigger>
+          <TabsTrigger value="bulk">Bulk Entry</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="single" className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>{editingOperation ? "Updating Operation" : "Select Operation"}</Label>
+              {editingOperation ? (
+                <div className="h-9 flex items-center px-3 border rounded-md bg-muted text-sm font-medium">
+                  {editingOperation.operations?.name ?? "Unknown Operation"}
+                </div>
+              ) : (
+                <Select value={selectedOpId ?? ""} onValueChange={(v) => setSelectedOpId(v || null)}>
+                  <SelectTrigger className="h-9">
+                    <SelectValue placeholder="Choose operation" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {opMasters.map(m => (
+                      <SelectItem key={`master-${m.id}`} value={`master:${m.id}`}>{m.name} — ₹{m.amount_per_piece}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
-          ) : (
-            <Select value={selectedOpId ?? ""} onValueChange={(v) => setSelectedOpId(v || null)}>
-              <SelectTrigger className="h-9">
-                <SelectValue placeholder="Choose operation" />
-              </SelectTrigger>
-              <SelectContent>
-                {opMasters.map(m => (
-                  <SelectItem key={`master-${m.id}`} value={`master:${m.id}`}>{m.name} — ₹{m.amount_per_piece}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-        </div>
 
-        <div className="space-y-2">
-          <Label>Worker</Label>
-          <Select value={selectedWorkerId ?? ""} onValueChange={(v) => setSelectedWorkerId(v === "__none" ? null : (v || null))}>
-            <SelectTrigger className="h-9">
-              <SelectValue placeholder="Select worker" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="__none">None</SelectItem>
-              {(availableWorkers && availableWorkers.length > 0 ? availableWorkers : fetchedWorkers).map((w: any) => (
-                <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label>Quantity (pieces)</Label>
-        <Input
-          type="number"
-          value={pieces || ''}
-          onChange={(e) => setPieces(Number(e.target.value))}
-          placeholder="Enter pieces"
-          className="h-9"
-        />
-      </div>
-
-      <div className="bg-primary/5 border border-primary/10 rounded-lg p-3 text-xs">
-        <div className="flex justify-between items-center mb-1">
-          <span className="text-muted-foreground">Production Limit:</span>
-          <span className="font-bold">{productionLimit} pcs</span>
-        </div>
-        {(selectedOpId || editingOperation) && (
-          <div className="space-y-1 pt-2 mt-2 border-t border-primary/10">
-            <div className="flex justify-between items-center">
-              <span className="text-muted-foreground">Already recorded:</span>
-              <span className="font-medium">{currentOperationTotal} pcs</span>
-            </div>
-            <div className="flex justify-between items-center text-primary font-medium">
-              <span>Remaining:</span>
-              <span>{Math.max(0, productionLimit - currentOperationTotal)} pcs</span>
+            <div className="space-y-2">
+              <Label>Worker</Label>
+              <Select value={selectedWorkerId ?? ""} onValueChange={(v) => setSelectedWorkerId(v === "__none" ? null : (v || null))}>
+                <SelectTrigger className="h-9">
+                  <SelectValue placeholder="Select worker" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none">None</SelectItem>
+                  {[...(availableWorkers && availableWorkers.length > 0 ? availableWorkers : fetchedWorkers)]
+                    .sort((a: any, b: any) => (a.name || "").localeCompare(b.name || ""))
+                    .map((w: any) => (
+                      <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
-        )}
-      </div>
 
-      <div className="flex flex-col sm:flex-row gap-2 pt-2 border-t sticky bottom-0 bg-background pt-4">
-        <Button onClick={handleAdd} className="flex-1">{editingOperation ? "Update Record" : "Add Record"}</Button>
-        {editingOperation && (
-          <Button variant="outline" onClick={() => { setEditingOperation(null); setPieces(0); setSelectedWorkerId(null); }} className="flex-1">
-            Cancel
-          </Button>
-        )}
-      </div>
+          <div className="space-y-2">
+            <Label>Quantity (pieces)</Label>
+            <Input
+              type="number"
+              value={pieces || ''}
+              onChange={(e) => setPieces(Number(e.target.value))}
+              placeholder="Enter pieces"
+              className="h-9"
+            />
+          </div>
+
+          <div className="bg-primary/5 border border-primary/10 rounded-lg p-3 text-xs">
+            <div className="flex justify-between items-center mb-1">
+              <span className="text-muted-foreground">Production Limit:</span>
+              <span className="font-bold">{productionLimit} pcs</span>
+            </div>
+            {(selectedOpId || editingOperation) && (
+              <div className="space-y-1 pt-2 mt-2 border-t border-primary/10">
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Already recorded:</span>
+                  <span className="font-medium">{currentOperationTotal} pcs</span>
+                </div>
+                <div className="flex justify-between items-center text-primary font-medium">
+                  <span>Remaining:</span>
+                  <span>{Math.max(0, productionLimit - currentOperationTotal)} pcs</span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-2 pt-2 border-t sticky bottom-0 bg-background pt-4">
+            <Button onClick={handleAdd} className="flex-1">{editingOperation ? "Update Record" : "Add Record"}</Button>
+            {editingOperation && (
+              <Button variant="outline" onClick={() => { setEditingOperation(null); setPieces(0); setSelectedWorkerId(null); }} className="flex-1">
+                Cancel
+              </Button>
+            )}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="bulk" className="space-y-4">
+          <div className="space-y-2">
+            <Label>Select Worker</Label>
+            <Select value={bulkWorkerId ?? ""} onValueChange={(v) => setBulkWorkerId(v || null)}>
+              <SelectTrigger className="h-9">
+                <SelectValue placeholder="Select worker for all operations" />
+              </SelectTrigger>
+              <SelectContent>
+                {[...(availableWorkers && availableWorkers.length > 0 ? availableWorkers : fetchedWorkers)]
+                  .sort((a: any, b: any) => (a.name || "").localeCompare(b.name || ""))
+                  .map((w: any) => (
+                    <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-3">
+            <Label>Operations</Label>
+            <div className="space-y-2">
+              {bulkOps.map((row, index) => (
+                <div key={row.id} className="flex gap-2 items-start">
+                  <div className="flex-1 min-w-[140px]">
+                    <Select value={row.masterOpId ?? ""} onValueChange={(v) => handleBulkUpdateRow(row.id, 'masterOpId', v)}>
+                      <SelectTrigger className="h-9">
+                        <SelectValue placeholder="Operation" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {opMasters.map(m => (
+                          <SelectItem key={`bulk-${row.id}-${m.id}`} value={m.id}>{m.name} (₹{m.amount_per_piece})</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="w-[80px] sm:w-[100px]">
+                    <Input
+                      type="number"
+                      placeholder="Qty"
+                      className="h-9"
+                      value={row.pieces || ''}
+                      onChange={(e) => handleBulkUpdateRow(row.id, 'pieces', Number(e.target.value))}
+                    />
+                  </div>
+                  <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-destructive" onClick={() => handleBulkRemoveRow(row.id)}>
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+            <Button variant="outline" size="sm" onClick={handleBulkAddRow} className="w-full border-dashed">
+              <Plus className="h-4 w-4 mr-2" /> Add Operation
+            </Button>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-2 pt-2 border-t sticky bottom-0 bg-background pt-4">
+            <Button onClick={handleBulkSubmit} className="flex-1" disabled={!bulkWorkerId}>
+              Save All Operations
+            </Button>
+          </div>
+        </TabsContent>
+      </Tabs>
 
       <div className="mt-4">
         <h4 className="font-medium">Existing Operation Records</h4>
@@ -417,7 +652,7 @@ const ProductionOperationsDialog: React.FC<Props> = ({ open, onOpenChange, produ
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => startEdit(o)}>
+                  <DropdownMenuItem onClick={() => { setActiveTab("single"); startEdit(o); }}>
                     <Pencil className="mr-2 h-4 w-4" /> Edit
                   </DropdownMenuItem>
                   <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => setDeletingOperationId(o.id)}>

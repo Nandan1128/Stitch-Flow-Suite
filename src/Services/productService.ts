@@ -135,27 +135,41 @@ export const updateProduct = async (id: string, updates: any, operations: any[] 
   }
 
   // 3. Upsert incoming operations
-  if (operations && operations.length > 0) {
-    const formattedOps = operations.map((op) => {
-      const row: any = {
-        name: op.name,
-        operation_code: op.operation_code,
-        amount_per_piece: op.amount_per_piece,
-        product_id: id,
-        entered_by: op.entered_by,
-      };
-      // Keep ID if it's an existing one
-      if (op.id && !op.id.startsWith("new-")) {
-        row.id = op.id;
-      }
-      return row;
-    });
+  // 3. Upsert incoming operations (Split into updates and inserts to avoid mixed key types)
+  const existingOps = operations.filter(op => op.id && !op.id.startsWith("new-"));
+  const newOps = operations.filter(op => !op.id || op.id.startsWith("new-"));
 
-    const { error: upsertError } = await supabase
+  if (existingOps.length > 0) {
+    const formattedExisting = existingOps.map(op => ({
+      id: op.id,
+      name: op.name,
+      operation_code: op.operation_code,
+      amount_per_piece: op.amount_per_piece,
+      product_id: id,
+      entered_by: op.entered_by,
+    }));
+
+    const { error: updateErr } = await supabase
       .from("operations")
-      .upsert(formattedOps);
+      .upsert(formattedExisting);
 
-    if (upsertError) throw upsertError;
+    if (updateErr) throw updateErr;
+  }
+
+  if (newOps.length > 0) {
+    const formattedNew = newOps.map(op => ({
+      name: op.name,
+      operation_code: op.operation_code,
+      amount_per_piece: op.amount_per_piece,
+      product_id: id,
+      entered_by: op.entered_by,
+    }));
+
+    const { error: insertErr } = await supabase
+      .from("operations")
+      .insert(formattedNew);
+
+    if (insertErr) throw insertErr;
   }
 
   return true;

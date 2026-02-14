@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 export type OperationDetail = {
     id?: string;
     productName: string;
+    operationName?: string; // Added
     date: string | Date;
     pieces: number;
     ratePerPiece: number;
@@ -144,6 +145,7 @@ export const WorkerOperationDetailDialog: React.FC<Props> = ({ open, onClose, wo
                         <thead className="sticky top-0 bg-white dark:bg-slate-800 z-10 shadow-sm">
                             <tr className="text-left text-sm text-slate-600 dark:text-slate-300">
                                 <th className="px-3 py-2">Product</th>
+                                <th className="px-3 py-2">Operation</th>
                                 <th className="px-3 py-2">Date</th>
 
                                 <th className="px-3 py-2 text-right">Pieces</th>
@@ -168,6 +170,7 @@ export const WorkerOperationDetailDialog: React.FC<Props> = ({ open, onClose, wo
                                     return (
                                         <tr key={op.id ?? i} className="border-t">
                                             <td className="px-3 py-3 align-middle">{op.productName}</td>
+                                            <td className="px-3 py-3 align-middle font-medium">{op.operationName || "-"}</td>
                                             <td className="px-3 py-3 align-middle">{fmtDate(op.date)}</td>
 
 

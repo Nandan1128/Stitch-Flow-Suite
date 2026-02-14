@@ -31,7 +31,7 @@ import { format } from 'date-fns';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { markWorkerSalariesPaid } from '@/Services/salaryService';
+import { markWorkerSalariesPaid, processWorkerPayments } from '@/Services/salaryService';
 import { Production } from '@/types/production';
 
 import WorkerOperationDetailDialog, { OperationDetail } from "@/components/salary/WorkerOperationDetailDialog";
@@ -129,12 +129,8 @@ export const WorkerSalaryTable: React.FC<WorkerSalaryTableProps> = ({
       const selectedMonth = parseInt(month);
       const selectedYear = parseInt(year);
 
-      // UUID checker
-      const isUuid = (v: string) =>
-        /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/.test(v);
-
-      // FIRST define idsToMark (your error was using it BEFORE this line)
-      const idsToMark = salaries
+      // Filter items to mark
+      const itemsToMark = salaries
         .filter((s) => s.workerId === workerId)
         .filter((s) => {
           const d = new Date(s.date);
@@ -143,12 +139,11 @@ export const WorkerSalaryTable: React.FC<WorkerSalaryTableProps> = ({
             d.getFullYear() === selectedYear &&
             !s.paid
           );
-        })
-        .map((s) => s.id);
+        });
 
-      console.log("DEBUG → idsToMark:", idsToMark);
+      console.log("DEBUG → itemsToMark:", itemsToMark);
 
-      if (idsToMark.length === 0) {
+      if (itemsToMark.length === 0) {
         toast({
           title: "Nothing to mark",
           description: "No unpaid salaries found for this worker.",
@@ -156,43 +151,37 @@ export const WorkerSalaryTable: React.FC<WorkerSalaryTableProps> = ({
         return;
       }
 
-      const validIds = idsToMark.filter((id) => isUuid(id));
+      // Call new processing function
+      // @ts-ignore
+      const result = await processWorkerPayments(itemsToMark);
 
-      console.log("DEBUG → validIds:", validIds);
-
-      if (validIds.length === 0) {
+      if (result.errors.length > 0) {
+        console.error("Payment errors:", result.errors);
         toast({
-          title: "UUID Error",
-          description: "No valid salary UUIDs found.",
+          title: "Partial Success / Error",
+          description: `Updated: ${result.updated}, Created: ${result.created}. Errors: ${result.errors.length}`,
           variant: "destructive",
         });
-        return;
-      }
-
-      const result = await markWorkerSalariesPaid(validIds);
-
-      if (result.error) {
+      } else {
         toast({
-          title: "Update Failed",
-          description: result.error.message,
-          variant: "destructive",
+          title: "Success",
+          description: `Successfully paid ${result.updated + result.created} records.`,
         });
-        return;
       }
 
-      // Update UI
+      // Update UI: Optimized local update
+      // We set everything for this worker/month to paid.
+      // Ideally we re-fetch to get the new IDs for created records, but for now specific "Mark as Paid" visual feedback is enough.
       setSalaries((prev) =>
-        prev.map((s) =>
-          validIds.includes(s.id)
-            ? { ...s, paid: true, paidDate: new Date() }
-            : s
-        )
+        prev.map((s) => {
+          const d = new Date(s.date);
+          if (s.workerId === workerId && d.getMonth() === selectedMonth && d.getFullYear() === selectedYear && !s.paid) {
+            return { ...s, paid: true, paidDate: new Date() };
+          }
+          return s;
+        })
       );
 
-      toast({
-        title: "Success",
-        description: `${validIds.length} salary records marked as paid.`,
-      });
     } catch (err: any) {
       console.error(err);
       toast({

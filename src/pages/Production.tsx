@@ -13,7 +13,9 @@ import { Input } from "@/components/ui/input";
 import { ProductionTable } from "@/components/production/ProductionTable";
 import { AddProductionDialog } from "@/components/production/AddProductionDialog";
 import { EditProductionDialog } from "@/components/production/EditProductionDialog";
+
 import ProductionOperationsDialog from "@/components/production/ProductionOperationsDialog";
+import WorkerBulkEntryDialog from "@/components/production/WorkerBulkEntryDialog";
 
 import {
   getProductions,
@@ -37,6 +39,8 @@ const ProductionPage: React.FC = () => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isOperationsDialogOpen, setIsOperationsDialogOpen] = useState(false);
+
+  const [isWorkerBulkEntryOpen, setIsWorkerBulkEntryOpen] = useState(false);
   const [selectedProduction, setSelectedProduction] = useState<Production | null>(null);
 
   const { data: products = [] } = useQuery({
@@ -104,10 +108,15 @@ const ProductionPage: React.FC = () => {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Production</h1>
-        <Button onClick={() => setIsAddDialogOpen(true)} className="w-full sm:w-auto">
-          <Plus className="mr-2 h-4 w-4" />
-          Add Production
-        </Button>
+        <div className="flex gap-2 w-full sm:w-auto">
+          <Button variant="outline" onClick={() => setIsWorkerBulkEntryOpen(true)} className="flex-1 sm:flex-none">
+            Worker Bulk Entry
+          </Button>
+          <Button onClick={() => setIsAddDialogOpen(true)} className="flex-1 sm:flex-none">
+            <Plus className="mr-2 h-4 w-4" />
+            Add Production
+          </Button>
+        </div>
       </div>
 
       <Card>
@@ -169,6 +178,11 @@ const ProductionPage: React.FC = () => {
         onOpenChange={setIsOperationsDialogOpen}
         production={selectedProduction}
         availableWorkers={[]} // wire to real workers where available
+      />
+
+      <WorkerBulkEntryDialog
+        open={isWorkerBulkEntryOpen}
+        onOpenChange={setIsWorkerBulkEntryOpen}
       />
     </div>
   );

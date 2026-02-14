@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
+import { useQuery } from "@tanstack/react-query";
 import {
     Table,
     TableBody,
@@ -41,8 +42,13 @@ interface OperationReportData {
 }
 
 const OperationReport: React.FC = () => {
-    const [data, setData] = useState<OperationReportData[]>([]);
-    const [loading, setLoading] = useState(false);
+    const { data: reportData, isLoading: loading, refetch } = useQuery({
+        queryKey: ["operation-report"],
+        queryFn: fetchOperationWiseReport,
+    });
+
+    const data = reportData || [];
+
     const isMobile = useIsMobile();
 
     // Filter states
@@ -52,22 +58,6 @@ const OperationReport: React.FC = () => {
     const [selectedProduct, setSelectedProduct] = useState<string>("all");
     const [selectedOperation, setSelectedOperation] = useState<string>("all");
     const [selectedWorker, setSelectedWorker] = useState<string>("all");
-
-    useEffect(() => {
-        loadData();
-    }, []);
-
-    const loadData = async () => {
-        try {
-            setLoading(true);
-            const result = await fetchOperationWiseReport();
-            setData(result);
-        } catch (error) {
-            console.error("Failed to load operation report", error);
-        } finally {
-            setLoading(false);
-        }
-    };
 
     // Get unique values for filter dropdowns
     const { products, operations, workers } = useMemo(() => {

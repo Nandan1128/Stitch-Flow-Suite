@@ -12,19 +12,20 @@ export interface WorkerSalary {
   totalAmount: number;
   paid: boolean;
   paidDate?: Date;
+  source?: 'production' | 'salary';
 }
 
 export interface EmployeeSalary {
-	id: string;
-	employeeId: string;
-	employeeName?: string | null; // added — service returns employee_name when present
-	month: Date; // parsed Date from salary_month
-	salary: number; // gross_salary mapped to salary
-	advance: number;
-	netSalary: number;
-	paid: boolean;
-	paidDate?: Date;
-	paidBy?: string;
+  id: string;
+  employeeId: string;
+  employeeName?: string | null; // added — service returns employee_name when present
+  month: Date; // parsed Date from salary_month
+  salary: number; // gross_salary mapped to salary
+  advance: number;
+  netSalary: number;
+  paid: boolean;
+  paidDate?: Date;
+  paidBy?: string;
 }
 
 export interface EmployeeAdvance {
@@ -55,7 +56,7 @@ export interface EmployeeSalaryFormData {
 export interface ProductionOperation {
   id: string;
   productionId: string;
-  operationId: string; 
+  operationId: string;
   workerId: string;
   piecesDone: number;
   date: Date;
@@ -66,38 +67,38 @@ export interface ProductionOperation {
 export const generateWorkerId = (currentIds: string[] = []): string => {
   const prefix = "WOR";
   let lastNumber = 0;
-  
+
   if (currentIds.length > 0) {
     // Extract numbers from existing IDs and find the highest
     const numbers = currentIds
       .filter(id => id.startsWith(prefix))
       .map(id => parseInt(id.replace(prefix, ''), 10))
       .filter(num => !isNaN(num));
-    
+
     if (numbers.length > 0) {
       lastNumber = Math.max(...numbers);
     }
   }
-  
+
   return `${prefix}${String(lastNumber + 1).padStart(3, '0')}`;
 };
 
 export const generateEmployeeId = (currentIds: string[] = []): string => {
   const prefix = "EMP";
   let lastNumber = 0;
-  
+
   if (currentIds.length > 0) {
     // Extract numbers from existing IDs and find the highest
     const numbers = currentIds
       .filter(id => id.startsWith(prefix))
       .map(id => parseInt(id.replace(prefix, ''), 10))
       .filter(num => !isNaN(num));
-    
+
     if (numbers.length > 0) {
       lastNumber = Math.max(...numbers);
     }
   }
-  
+
   return `${prefix}${String(lastNumber + 1).padStart(3, '0')}`;
 };
 
@@ -105,7 +106,7 @@ export const generateProductionId = (currentIds: string[] = []): string => {
   const prefix = "PRD";
   const year = new Date().getFullYear();
   let lastNumber = 0;
-  
+
   if (currentIds.length > 0) {
     // Extract numbers from existing IDs with this year
     const yearPrefix = `${prefix}-${year}-`;
@@ -113,11 +114,11 @@ export const generateProductionId = (currentIds: string[] = []): string => {
       .filter(id => id.startsWith(yearPrefix))
       .map(id => parseInt(id.replace(yearPrefix, ''), 10))
       .filter(num => !isNaN(num));
-    
+
     if (numbers.length > 0) {
       lastNumber = Math.max(...numbers);
     }
   }
-  
+
   return `${prefix}-${year}-${String(lastNumber + 1).padStart(3, '0')}`;
 };
