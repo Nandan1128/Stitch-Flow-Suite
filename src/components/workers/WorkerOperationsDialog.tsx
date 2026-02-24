@@ -36,6 +36,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Card, CardContent } from '@/components/ui/card';
+import { formatCurrency } from '@/lib/formatCurrency';
 
 interface WorkerOperation {
   id: string;
@@ -198,7 +199,7 @@ export const WorkerOperationsDialog: React.FC<WorkerOperationsDialogProps> = ({
         </div>
         <div className="text-right">
           <p className="text-[10px] uppercase text-muted-foreground font-semibold">Total Earnings</p>
-          <p className="text-sm font-bold text-primary">₹{totalEarnings}</p>
+          <p className="text-sm font-bold text-primary">₹{formatCurrency(totalEarnings)}</p>
         </div>
       </div>
 
@@ -232,8 +233,8 @@ export const WorkerOperationsDialog: React.FC<WorkerOperationsDialogProps> = ({
                       <p className="text-[10px] text-muted-foreground">Admin: {op.enteredBy || "—"}</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-[10px] text-muted-foreground">₹{op.ratePerPiece} / pc</p>
-                      <p className="text-sm font-bold text-primary">₹{op.totalEarning}</p>
+                      <p className="text-[10px] text-muted-foreground">₹{formatCurrency(op.ratePerPiece)} / pc</p>
+                      <p className="text-sm font-bold text-primary">₹{formatCurrency(op.totalEarning)}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -275,8 +276,8 @@ export const WorkerOperationsDialog: React.FC<WorkerOperationsDialogProps> = ({
                     <TableCell className="text-xs font-mono">{op.poNumber}</TableCell>
                     <TableCell className="text-xs">{format(new Date(op.date), 'dd/MM/yyyy')}</TableCell>
                     <TableCell className="text-right text-xs">{op.piecesDone}</TableCell>
-                    <TableCell className="text-right text-xs text-muted-foreground">₹{op.ratePerPiece}</TableCell>
-                    <TableCell className="text-right font-bold text-primary">₹{op.totalEarning}</TableCell>
+                    <TableCell className="text-right text-xs text-muted-foreground">₹{formatCurrency(op.ratePerPiece)}</TableCell>
+                    <TableCell className="text-right font-bold text-primary">₹{formatCurrency(op.totalEarning)}</TableCell>
                     <TableCell className="text-xs text-muted-foreground">{op.enteredBy || "—"}</TableCell>
                   </TableRow>
                 ))

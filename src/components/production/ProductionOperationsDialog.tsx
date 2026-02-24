@@ -1,5 +1,5 @@
 // src/components/production/ProductionOperationsDialog.tsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import {
   Drawer,
@@ -23,6 +23,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { addWorkerSalary, updateWorkerSalaryByOps, deleteWorkerSalary } from "@/Services/salaryService";
 import { deleteProductionOperation, checkAndUpdateProductionStatus } from "@/Services/productionService";
 import { useQueryClient } from "@tanstack/react-query";
+import { formatCurrency } from "@/lib/formatCurrency";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -39,9 +40,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { MoreVertical, Pencil, Trash2, Plus, X } from "lucide-react";
+import { MoreVertical, Pencil, Trash2, Plus, X, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 
 
 interface Props {
@@ -56,7 +58,7 @@ const ProductionOperationsDialog: React.FC<Props> = ({ open, onOpenChange, produ
   const { toast } = useToast();
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const isMobile = useIsMobile(); // Moved to top-level to fix hook rules
+  const isMobile = useIsMobile();
   const [ops, setOps] = useState<any[]>([]);
   const [opMasters, setOpMasters] = useState<any[]>([]);
   const [fetchedWorkers, setFetchedWorkers] = useState<any[]>([]);
@@ -72,6 +74,59 @@ const ProductionOperationsDialog: React.FC<Props> = ({ open, onOpenChange, produ
     { id: "init-1", masterOpId: null, pieces: 0 }
   ]);
 
+  // ── Computed: total_quantity for this production ──────────────────────────
+  const productionLimit = useMemo(() => {
+    return (production as any)?.total_quantity || 0;
+  }, [production]);
+
+  // ── Computed: per-operation already-recorded totals (excl. editing row) ──
+  const operationTotalsMap = useMemo(() => {
+    const map: Record<string, number> = {};
+    ops.forEach(op => {
+      const opId = op.operation_id;
+      if (!opId) return;
+      // When editing, exclude the row being edited from the total so we don't double-count
+      if (editingOperation && op.id === editingOperation.id) return;
+      map[opId] = (map[opId] || 0) + (Number(op.pieces_done) || 0);
+    });
+    return map;
+  }, [ops, editingOperation]);
+
+  // ── Computed: remaining pieces per operation master ───────────────────────
+  const remainingForOperation = (masterOpId: string, excludeRowId?: string): number => {
+    let already = 0;
+    ops.forEach(op => {
+      if (op.operation_id !== masterOpId) return;
+      if (excludeRowId && op.id === excludeRowId) return;
+      already += Number(op.pieces_done) || 0;
+    });
+    return Math.max(0, productionLimit - already);
+  };
+
+  // ── Computed: is a master operation fully done? ───────────────────────────
+  const isOperationComplete = (masterOpId: string) => {
+    return remainingForOperation(masterOpId) <= 0;
+  };
+
+  // ── Current operation remaining (Single Entry) ────────────────────────────
+  const currentOperationTotal = useMemo(() => {
+    let operationId: string | null = null;
+    if (selectedOpId && selectedOpId.startsWith("master:")) {
+      operationId = selectedOpId.split(":")[1];
+    } else if (editingOperation) {
+      operationId = editingOperation.operation_id;
+    }
+    if (!operationId) return 0;
+    return operationTotalsMap[operationId] || 0;
+  }, [operationTotalsMap, selectedOpId, editingOperation]);
+
+  const currentRemaining = Math.max(0, productionLimit - currentOperationTotal);
+
+  // ── Single Entry: live piece-count validity ───────────────────────────────
+  const piecesOverLimit = pieces > 0 && pieces > currentRemaining;
+  const piecesValid = pieces > 0 && !piecesOverLimit;
+
+  // ── Bulk Entry helpers ────────────────────────────────────────────────────
   const handleBulkAddRow = () => {
     setBulkOps([...bulkOps, { id: crypto.randomUUID(), masterOpId: null, pieces: 0 }]);
   };
@@ -83,8 +138,40 @@ const ProductionOperationsDialog: React.FC<Props> = ({ open, onOpenChange, produ
   };
 
   const handleBulkUpdateRow = (id: string, field: 'masterOpId' | 'pieces', value: any) => {
-    setBulkOps(bulkOps.map(r => r.id === id ? { ...r, [field]: value } : r));
+    setBulkOps(bulkOps.map(r => {
+      if (r.id !== id) return r;
+      const updated = { ...r, [field]: value };
+      // When operation changes, auto-reset pieces to 0
+      if (field === 'masterOpId') updated.pieces = 0;
+      return updated;
+    }));
   };
+
+  // Per bulk-row remaining (accounts for sibling rows selecting the same op)
+  const bulkRowRemaining = (rowId: string, masterOpId: string | null): number => {
+    if (!masterOpId) return productionLimit;
+    // Pieces already in DB for this op
+    const dbTotal = (operationTotalsMap[masterOpId] || 0);
+    // Pieces in OTHER bulk rows for the same operation
+    const siblingTotal = bulkOps
+      .filter(r => r.id !== rowId && r.masterOpId === masterOpId)
+      .reduce((s, r) => s + (Number(r.pieces) || 0), 0);
+    return Math.max(0, productionLimit - dbTotal - siblingTotal);
+  };
+
+  // Bulk validation summary
+  const bulkValidationErrors = useMemo(() => {
+    const errors: string[] = [];
+    bulkOps.forEach((row, i) => {
+      if (!row.masterOpId || row.pieces <= 0) return;
+      const rem = bulkRowRemaining(row.id, row.masterOpId);
+      if (row.pieces > rem + row.pieces) { // rem already subtracts siblings
+        const master = opMasters.find(m => m.id === row.masterOpId);
+        errors.push(`Row ${i + 1} (${master?.name || 'op'}): ${row.pieces} exceeds remaining ${rem}`);
+      }
+    });
+    return errors;
+  }, [bulkOps, opMasters, operationTotalsMap]);
 
   const handleBulkSubmit = async () => {
     if (!production || !bulkWorkerId) {
@@ -95,6 +182,25 @@ const ProductionOperationsDialog: React.FC<Props> = ({ open, onOpenChange, produ
     const validRows = bulkOps.filter(r => r.masterOpId && r.pieces > 0);
     if (validRows.length === 0) {
       toast({ title: "Validation Error", description: "Please add at least one valid operation with quantity.", variant: "destructive" });
+      return;
+    }
+
+    // Per-row limit validation
+    const limitErrors: string[] = [];
+    validRows.forEach((row, i) => {
+      const rem = bulkRowRemaining(row.id, row.masterOpId!);
+      if (row.pieces > rem) {
+        const master = opMasters.find(m => m.id === row.masterOpId);
+        limitErrors.push(`"${master?.name || `Row ${i + 1}`}": you entered ${row.pieces} but only ${rem} remaining.`);
+      }
+    });
+
+    if (limitErrors.length > 0) {
+      toast({
+        title: "Quantity Limit Exceeded",
+        description: limitErrors.join(" | "),
+        variant: "destructive"
+      });
       return;
     }
 
@@ -109,14 +215,12 @@ const ProductionOperationsDialog: React.FC<Props> = ({ open, onOpenChange, produ
       let successCount = 0;
 
       for (const row of validRows) {
-        // 1. Get Master Op
         const master = opMasters.find(m => m.id === row.masterOpId);
         if (!master) continue;
 
         const amountPerPiece = master.amount_per_piece || 0;
         const totalAmount = row.pieces * amountPerPiece;
 
-        // 2. Insert Production Operation
         const payload = {
           operation_id: row.masterOpId,
           worker_id: bulkWorkerId,
@@ -132,7 +236,6 @@ const ProductionOperationsDialog: React.FC<Props> = ({ open, onOpenChange, produ
 
         await insertProductionOperation(payload);
 
-        // 3. Add Salary
         try {
           const salaryResult = await addWorkerSalary({
             worker_id: bulkWorkerId,
@@ -166,12 +269,10 @@ const ProductionOperationsDialog: React.FC<Props> = ({ open, onOpenChange, produ
 
       toast({ title: "Success", description: `Added ${successCount} operations successfully.` });
 
-      // Refresh
       const refreshed = await getOperationsByProductionId(production.id);
       setOps(refreshed || []);
       await checkAndUpdateProductionStatus(production.id);
 
-      // Reset Bulk Form
       setBulkOps([{ id: crypto.randomUUID(), masterOpId: null, pieces: 0 }]);
       setBulkWorkerId(null);
 
@@ -207,25 +308,6 @@ const ProductionOperationsDialog: React.FC<Props> = ({ open, onOpenChange, produ
     })();
   }, [production]);
 
-  const productionLimit = React.useMemo(() => {
-    return (production as any)?.total_quantity || 0;
-  }, [production]);
-
-  const currentOperationTotal = React.useMemo(() => {
-    let operationId: string | null = null;
-    if (selectedOpId && selectedOpId.startsWith("master:")) {
-      operationId = selectedOpId.split(":")[1];
-    } else if (editingOperation) {
-      operationId = editingOperation.operation_id;
-    }
-
-    if (!operationId) return 0;
-
-    return ops
-      .filter(op => op.operation_id === operationId && op.id !== editingOperation?.id)
-      .reduce((sum, op) => sum + (Number(op.pieces_done) || 0), 0);
-  }, [ops, selectedOpId, editingOperation]);
-
   const handleAdd = async () => {
     if (!production) {
       toast({ title: "Production missing", variant: "destructive" });
@@ -234,7 +316,6 @@ const ProductionOperationsDialog: React.FC<Props> = ({ open, onOpenChange, produ
 
     try {
       const requestedPieces = Number(pieces) || 0;
-      const productionLimit = (production as any)?.total_quantity || 0;
 
       let operationId: string | null = null;
       if (selectedOpId && selectedOpId.startsWith("master:")) {
@@ -243,23 +324,25 @@ const ProductionOperationsDialog: React.FC<Props> = ({ open, onOpenChange, produ
         operationId = editingOperation.operation_id;
       }
 
-      let totalForThisOperation = 0;
-      if (operationId) {
-        totalForThisOperation = ops
-          .filter(op => op.operation_id === operationId && op.id !== editingOperation?.id)
-          .reduce((sum, op) => sum + (Number(op.pieces_done) || 0), 0);
+      // ── Limit guard ───────────────────────────────────────────────────────
+      if (requestedPieces <= 0) {
+        toast({ title: "Invalid Quantity", description: "Please enter at least 1 piece.", variant: "destructive" });
+        return;
       }
 
-      const newTotal = totalForThisOperation + requestedPieces;
+      const alreadyForOp = operationId ? (operationTotalsMap[operationId] || 0) : 0;
+      const newTotal = alreadyForOp + requestedPieces;
 
       if (newTotal > productionLimit) {
+        const remaining = Math.max(0, productionLimit - alreadyForOp);
         toast({
           title: "Quantity Limit Exceeded",
-          description: `Cannot add ${requestedPieces} pieces. Limit is ${productionLimit} pieces.`,
+          description: `Only ${remaining} piece${remaining !== 1 ? 's' : ''} remaining for this operation (limit: ${productionLimit}).`,
           variant: "destructive"
         });
         return;
       }
+      // ─────────────────────────────────────────────────────────────────────
 
       if (!editingOperation && selectedOpId && selectedOpId.startsWith("master:")) {
         const masterId = selectedOpId.split(":")[1];
@@ -296,7 +379,7 @@ const ProductionOperationsDialog: React.FC<Props> = ({ open, onOpenChange, produ
               amount_per_piece: Number(amountPerPiece || 0),
               total_amount: total,
               date: payload.date,
-              created_by: payload.entered_by, // Pass name, not UUID
+              created_by: payload.entered_by,
             });
             if (salaryResult?.error) {
               console.error("Salary creation failed:", salaryResult.error);
@@ -319,7 +402,6 @@ const ProductionOperationsDialog: React.FC<Props> = ({ open, onOpenChange, produ
         const refreshed = await getOperationsByProductionId(production.id);
         setOps(refreshed || []);
 
-        // Check completion status
         const statusChanged = await checkAndUpdateProductionStatus(production.id);
         if (statusChanged) {
           toast({
@@ -329,7 +411,6 @@ const ProductionOperationsDialog: React.FC<Props> = ({ open, onOpenChange, produ
           });
         }
 
-        // clear form
         setSelectedOpId(null);
         setSelectedWorkerId(null);
         setPieces(0);
@@ -353,13 +434,13 @@ const ProductionOperationsDialog: React.FC<Props> = ({ open, onOpenChange, produ
       const amountPerPiece = opBefore?.operations?.amount_per_piece ?? opBefore?.rate_per_piece ?? opBefore?.rate ?? 0;
       const earningsValue = (Number(pieces) || 0) * Number(amountPerPiece || 0);
 
-      const res = await assignWorkerToOperation(production.id, targetOpId, selectedWorkerId || null, pieces || 0, workerName || null, enteredBy, earningsValue);
+      await assignWorkerToOperation(production.id, targetOpId, selectedWorkerId || null, pieces || 0, workerName || null, enteredBy, earningsValue);
       toast({ title: "Saved", description: "Operation updated" });
 
       try {
-        const opBefore = ops.find(o => o.id === targetOpId);
-        const amountPerPiece = opBefore?.operations?.amount_per_piece ?? opBefore?.rate_per_piece ?? opBefore?.rate ?? 0;
-        const total = (Number(pieces) || 0) * Number(amountPerPiece || 0);
+        const opBefore2 = ops.find(o => o.id === targetOpId);
+        const amountPerPiece2 = opBefore2?.operations?.amount_per_piece ?? opBefore2?.rate_per_piece ?? opBefore2?.rate ?? 0;
+        const total = (Number(pieces) || 0) * Number(amountPerPiece2 || 0);
 
         const oldWorkerId = opBefore?.worker_id;
         const oldDate = opBefore?.date;
@@ -389,18 +470,10 @@ const ProductionOperationsDialog: React.FC<Props> = ({ open, onOpenChange, produ
               }
             }
           } else if (oldWorkerId) {
-            const updateResult = await updateWorkerSalaryByOps(oldWorkerId, masterOpId, oldDate, {
+            await updateWorkerSalaryByOps(oldWorkerId, masterOpId, oldDate, {
               pieces_done: Number(pieces),
               total_amount: total
             });
-            if (updateResult?.error) {
-              console.error("Salary update failed:", updateResult.error);
-              toast({
-                title: "Warning",
-                description: `Production updated but salary record update failed: ${updateResult.error.message}`,
-                variant: "destructive"
-              });
-            }
           } else if (Number(pieces) > 0) {
             const salaryResult = await addWorkerSalary({
               worker_id: selectedWorkerId,
@@ -469,7 +542,7 @@ const ProductionOperationsDialog: React.FC<Props> = ({ open, onOpenChange, produ
         }
       }
       toast({ title: "Deleted", description: "Record removed" });
-      const refreshed = await getOperationsByProductionId(production.id);
+      const refreshed = await getOperationsByProductionId(production!.id);
       setOps(refreshed || []);
       queryClient.invalidateQueries({ queryKey: ["productions"] });
       queryClient.invalidateQueries({ queryKey: ["operation-report"] });
@@ -482,7 +555,41 @@ const ProductionOperationsDialog: React.FC<Props> = ({ open, onOpenChange, produ
 
   if (!production) return null;
 
-
+  // ── Operation Progress Summary (per master operation) ─────────────────────
+  const renderOperationProgressSummary = () => {
+    if (opMasters.length === 0) return null;
+    return (
+      <div className="mt-4 rounded-lg border bg-muted/30 p-3 space-y-2">
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Operation Progress</p>
+        <div className="space-y-1.5">
+          {opMasters.map(m => {
+            const done = operationTotalsMap[m.id] || 0;
+            const pct = productionLimit > 0 ? Math.min(100, Math.round((done / productionLimit) * 100)) : 0;
+            const complete = done >= productionLimit;
+            return (
+              <div key={m.id} className="space-y-0.5">
+                <div className="flex justify-between items-center text-xs">
+                  <span className="font-medium flex items-center gap-1">
+                    {complete && <CheckCircle2 className="h-3 w-3 text-green-500" />}
+                    {m.name}
+                  </span>
+                  <span className={complete ? "text-green-600 font-semibold" : "text-muted-foreground"}>
+                    {done} / {productionLimit} pcs {complete && "✓"}
+                  </span>
+                </div>
+                <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all ${complete ? "bg-green-500" : "bg-primary"}`}
+                    style={{ width: `${pct}%` }}
+                  />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
 
   const renderContent = () => (
     <div className="space-y-4 py-2">
@@ -492,6 +599,7 @@ const ProductionOperationsDialog: React.FC<Props> = ({ open, onOpenChange, produ
           <TabsTrigger value="bulk">Bulk Entry</TabsTrigger>
         </TabsList>
 
+        {/* ── SINGLE ENTRY TAB ── */}
         <TabsContent value="single" className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -501,14 +609,32 @@ const ProductionOperationsDialog: React.FC<Props> = ({ open, onOpenChange, produ
                   {editingOperation.operations?.name ?? "Unknown Operation"}
                 </div>
               ) : (
-                <Select value={selectedOpId ?? ""} onValueChange={(v) => setSelectedOpId(v || null)}>
+                <Select value={selectedOpId ?? ""} onValueChange={(v) => { setSelectedOpId(v || null); setPieces(0); }}>
                   <SelectTrigger className="h-9">
                     <SelectValue placeholder="Choose operation" />
                   </SelectTrigger>
                   <SelectContent>
-                    {opMasters.map(m => (
-                      <SelectItem key={`master-${m.id}`} value={`master:${m.id}`}>{m.name} — ₹{m.amount_per_piece}</SelectItem>
-                    ))}
+                    {opMasters.map(m => {
+                      const complete = isOperationComplete(m.id);
+                      return (
+                        <SelectItem
+                          key={`master-${m.id}`}
+                          value={`master:${m.id}`}
+                          disabled={complete}
+                        >
+                          <span className="flex items-center gap-2">
+                            {complete && <CheckCircle2 className="h-3 w-3 text-green-500 shrink-0" />}
+                            {m.name} — ₹{formatCurrency(m.amount_per_piece)}
+                            {complete && <span className="text-green-600 text-xs">(Complete)</span>}
+                            {!complete && (
+                              <span className="text-muted-foreground text-xs ml-1">
+                                ({remainingForOperation(m.id)} left)
+                              </span>
+                            )}
+                          </span>
+                        </SelectItem>
+                      );
+                    })}
                   </SelectContent>
                 </Select>
               )}
@@ -532,38 +658,71 @@ const ProductionOperationsDialog: React.FC<Props> = ({ open, onOpenChange, produ
             </div>
           </div>
 
+          {/* Pieces input with limit info */}
           <div className="space-y-2">
-            <Label>Quantity (pieces)</Label>
+            <div className="flex items-center justify-between">
+              <Label>Quantity (pieces)</Label>
+              {(selectedOpId || editingOperation) && (
+                <span className={`text-xs font-medium ${currentRemaining === 0 ? "text-destructive" : "text-muted-foreground"}`}>
+                  Max: {currentRemaining} pcs remaining
+                </span>
+              )}
+            </div>
             <Input
               type="number"
               value={pieces || ''}
-              onChange={(e) => setPieces(Number(e.target.value))}
-              placeholder="Enter pieces"
-              className="h-9"
+              min={1}
+              max={currentRemaining > 0 ? currentRemaining : undefined}
+              onChange={(e) => {
+                const val = Number(e.target.value);
+                setPieces(val);
+              }}
+              placeholder={currentRemaining > 0 ? `Max ${currentRemaining}` : "Select operation first"}
+              className={`h-9 ${piecesOverLimit ? "border-destructive focus-visible:ring-destructive" : ""}`}
+              disabled={currentRemaining === 0 && !editingOperation && !!(selectedOpId)}
             />
+            {piecesOverLimit && (
+              <p className="text-xs text-destructive flex items-center gap-1">
+                <AlertTriangle className="h-3 w-3" />
+                Exceeds limit by {pieces - currentRemaining} piece{pieces - currentRemaining !== 1 ? 's' : ''}
+              </p>
+            )}
           </div>
 
-          <div className="bg-primary/5 border border-primary/10 rounded-lg p-3 text-xs">
-            <div className="flex justify-between items-center mb-1">
+          {/* Info panel */}
+          <div className="bg-primary/5 border border-primary/10 rounded-lg p-3 text-xs space-y-1">
+            <div className="flex justify-between items-center">
               <span className="text-muted-foreground">Production Limit:</span>
               <span className="font-bold">{productionLimit} pcs</span>
             </div>
             {(selectedOpId || editingOperation) && (
-              <div className="space-y-1 pt-2 mt-2 border-t border-primary/10">
-                <div className="flex justify-between items-center">
+              <>
+                <div className="flex justify-between items-center pt-1 mt-1 border-t border-primary/10">
                   <span className="text-muted-foreground">Already recorded:</span>
                   <span className="font-medium">{currentOperationTotal} pcs</span>
                 </div>
-                <div className="flex justify-between items-center text-primary font-medium">
+                <div className={`flex justify-between items-center font-medium ${currentRemaining === 0 ? "text-green-600" : "text-primary"}`}>
                   <span>Remaining:</span>
-                  <span>{Math.max(0, productionLimit - currentOperationTotal)} pcs</span>
+                  <span>{currentRemaining === 0 ? "✓ Complete" : `${currentRemaining} pcs`}</span>
                 </div>
-              </div>
+                {pieces > 0 && !piecesOverLimit && (
+                  <div className="flex justify-between items-center text-muted-foreground pt-1 mt-1 border-t border-primary/10">
+                    <span>After this entry:</span>
+                    <span>{currentOperationTotal + pieces} / {productionLimit} pcs</span>
+                  </div>
+                )}
+              </>
             )}
           </div>
 
           <div className="flex flex-col sm:flex-row gap-2 pt-2 border-t sticky bottom-0 bg-background pt-4">
-            <Button onClick={handleAdd} className="flex-1">{editingOperation ? "Update Record" : "Add Record"}</Button>
+            <Button
+              onClick={handleAdd}
+              className="flex-1"
+              disabled={piecesOverLimit || (pieces <= 0 && !editingOperation)}
+            >
+              {editingOperation ? "Update Record" : "Add Record"}
+            </Button>
             {editingOperation && (
               <Button variant="outline" onClick={() => { setEditingOperation(null); setPieces(0); setSelectedWorkerId(null); }} className="flex-1">
                 Cancel
@@ -572,6 +731,7 @@ const ProductionOperationsDialog: React.FC<Props> = ({ open, onOpenChange, produ
           </div>
         </TabsContent>
 
+        {/* ── BULK ENTRY TAB ── */}
         <TabsContent value="bulk" className="space-y-4">
           <div className="space-y-2">
             <Label>Select Worker</Label>
@@ -592,48 +752,123 @@ const ProductionOperationsDialog: React.FC<Props> = ({ open, onOpenChange, produ
           <div className="space-y-3">
             <Label>Operations</Label>
             <div className="space-y-2">
-              {bulkOps.map((row, index) => (
-                <div key={row.id} className="flex gap-2 items-start">
-                  <div className="flex-1 min-w-[140px]">
-                    <Select value={row.masterOpId ?? ""} onValueChange={(v) => handleBulkUpdateRow(row.id, 'masterOpId', v)}>
-                      <SelectTrigger className="h-9">
-                        <SelectValue placeholder="Operation" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {opMasters.map(m => (
-                          <SelectItem key={`bulk-${row.id}-${m.id}`} value={m.id}>{m.name} (₹{m.amount_per_piece})</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+              {bulkOps.map((row, index) => {
+                const rem = bulkRowRemaining(row.id, row.masterOpId);
+                const isOver = row.pieces > 0 && row.pieces > rem;
+                const opComplete = row.masterOpId ? isOperationComplete(row.masterOpId) : false;
+                return (
+                  <div key={row.id} className="space-y-1">
+                    <div className="flex gap-2 items-start">
+                      <div className="flex-1 min-w-[140px]">
+                        <Select value={row.masterOpId ?? ""} onValueChange={(v) => handleBulkUpdateRow(row.id, 'masterOpId', v)}>
+                          <SelectTrigger className="h-9">
+                            <SelectValue placeholder="Operation" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {opMasters.map(m => {
+                              const complete = isOperationComplete(m.id);
+                              return (
+                                <SelectItem
+                                  key={`bulk-${row.id}-${m.id}`}
+                                  value={m.id}
+                                  disabled={complete}
+                                >
+                                  {m.name} (₹{formatCurrency(m.amount_per_piece)})
+                                  {complete
+                                    ? " ✓ Complete"
+                                    : ` · ${remainingForOperation(m.id)} left`}
+                                </SelectItem>
+                              );
+                            })}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="w-[80px] sm:w-[100px]">
+                        <Input
+                          type="number"
+                          placeholder={row.masterOpId ? `Max ${rem}` : "Qty"}
+                          className={`h-9 ${isOver ? "border-destructive" : ""}`}
+                          value={row.pieces || ''}
+                          min={1}
+                          max={rem}
+                          disabled={opComplete}
+                          onChange={(e) => handleBulkUpdateRow(row.id, 'pieces', Number(e.target.value))}
+                        />
+                      </div>
+                      <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-destructive" onClick={() => handleBulkRemoveRow(row.id)}>
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    {/* Per-row feedback */}
+                    {row.masterOpId && row.pieces > 0 && (
+                      <div className={`text-xs flex items-center gap-1 pl-1 ${isOver ? "text-destructive" : "text-muted-foreground"}`}>
+                        {isOver
+                          ? <><AlertTriangle className="h-3 w-3" /> Exceeds limit by {row.pieces - rem}</>
+                          : <>After entry: {(operationTotalsMap[row.masterOpId] || 0) + row.pieces} / {productionLimit} pcs</>
+                        }
+                      </div>
+                    )}
                   </div>
-                  <div className="w-[80px] sm:w-[100px]">
-                    <Input
-                      type="number"
-                      placeholder="Qty"
-                      className="h-9"
-                      value={row.pieces || ''}
-                      onChange={(e) => handleBulkUpdateRow(row.id, 'pieces', Number(e.target.value))}
-                    />
-                  </div>
-                  <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-destructive" onClick={() => handleBulkRemoveRow(row.id)}>
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-              ))}
+                );
+              })}
             </div>
             <Button variant="outline" size="sm" onClick={handleBulkAddRow} className="w-full border-dashed">
               <Plus className="h-4 w-4 mr-2" /> Add Operation
             </Button>
           </div>
 
+          {/* Bulk total earnings preview */}
+          {bulkOps.some(r => r.masterOpId && r.pieces > 0) && (
+            <div className="bg-primary/5 border border-primary/10 rounded-lg p-3 text-xs space-y-1">
+              <p className="font-semibold text-muted-foreground">Entry Summary</p>
+              {bulkOps.filter(r => r.masterOpId && r.pieces > 0).map(row => {
+                const master = opMasters.find(m => m.id === row.masterOpId);
+                const earnings = (master?.amount_per_piece || 0) * row.pieces;
+                const rem = bulkRowRemaining(row.id, row.masterOpId);
+                const isOver = row.pieces > rem;
+                return (
+                  <div key={row.id} className={`flex justify-between ${isOver ? "text-destructive" : ""}`}>
+                    <span>{master?.name}: {row.pieces} pcs{isOver ? ` ⚠ (max ${rem})` : ""}</span>
+                    <span>₹{formatCurrency(earnings)}</span>
+                  </div>
+                );
+              })}
+              <div className="flex justify-between font-bold pt-1 mt-1 border-t border-primary/10">
+                <span>Total Earnings</span>
+                <span>
+                  ₹{formatCurrency(
+                    bulkOps
+                      .filter(r => r.masterOpId && r.pieces > 0)
+                      .reduce((s, row) => {
+                        const master = opMasters.find(m => m.id === row.masterOpId);
+                        return s + (master?.amount_per_piece || 0) * row.pieces;
+                      }, 0)
+                  )}
+                </span>
+              </div>
+            </div>
+          )}
+
           <div className="flex flex-col sm:flex-row gap-2 pt-2 border-t sticky bottom-0 bg-background pt-4">
-            <Button onClick={handleBulkSubmit} className="flex-1" disabled={!bulkWorkerId}>
+            <Button
+              onClick={handleBulkSubmit}
+              className="flex-1"
+              disabled={
+                !bulkWorkerId ||
+                bulkOps.every(r => !r.masterOpId || r.pieces <= 0) ||
+                bulkOps.some(r => r.masterOpId && r.pieces > 0 && r.pieces > bulkRowRemaining(r.id, r.masterOpId))
+              }
+            >
               Save All Operations
             </Button>
           </div>
         </TabsContent>
       </Tabs>
 
+      {/* ── Per-operation progress summary ── */}
+      {renderOperationProgressSummary()}
+
+      {/* ── Existing records list ── */}
       <div className="mt-4">
         <h4 className="font-medium">Existing Operation Records</h4>
         <div className="mt-2 space-y-2 max-h-[300px] overflow-y-auto pr-2">
@@ -669,8 +904,6 @@ const ProductionOperationsDialog: React.FC<Props> = ({ open, onOpenChange, produ
       </div>
     </div>
   );
-
-  // const isMobile = useIsMobile(); // Moved to top
 
   if (isMobile) {
     return (

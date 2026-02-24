@@ -33,6 +33,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { markWorkerSalariesPaid, processWorkerPayments } from '@/Services/salaryService';
 import { Production } from '@/types/production';
+import { formatCurrency } from '@/lib/formatCurrency';
 
 import WorkerOperationDetailDialog, { OperationDetail } from "@/components/salary/WorkerOperationDetailDialog";
 import { getWorkerOperations } from "@/Services/salaryService";
@@ -336,12 +337,12 @@ export const WorkerSalaryTable: React.FC<WorkerSalaryTableProps> = ({
                     <div className="flex flex-col">
                       <span className="text-muted-foreground text-xs uppercase font-semibold">Advance</span>
                       <span className="font-medium text-red-600">
-                        {workerSalary.totalAdvance > 0 ? `₹${workerSalary.totalAdvance}` : '-'}
+                        {workerSalary.totalAdvance > 0 ? `₹${formatCurrency(workerSalary.totalAdvance)}` : '-'}
                       </span>
                     </div>
                     <div className="flex flex-col col-span-2 border-t pt-2 mt-1">
                       <span className="text-muted-foreground text-xs uppercase font-semibold">Net Amount</span>
-                      <span className="text-lg font-bold text-primary">₹{workerSalary.totalAmount}</span>
+                      <span className="text-lg font-bold text-primary">₹{formatCurrency(workerSalary.totalAmount)}</span>
                     </div>
                   </div>
 
@@ -395,9 +396,9 @@ export const WorkerSalaryTable: React.FC<WorkerSalaryTableProps> = ({
                     <TableCell className="font-medium">{workerSalary.workerName}</TableCell>
                     <TableCell className={`${isMobile ? "" : "text-right"}`}>{workerSalary.totalPieces}</TableCell>
                     <TableCell className="text-right text-red-600">
-                      {workerSalary.totalAdvance > 0 ? `₹${workerSalary.totalAdvance}` : '-'}
+                      {workerSalary.totalAdvance > 0 ? `₹${formatCurrency(workerSalary.totalAdvance)}` : '-'}
                     </TableCell>
-                    <TableCell className="text-right font-medium">₹{workerSalary.totalAmount}</TableCell>
+                    <TableCell className="text-right font-medium">₹{formatCurrency(workerSalary.totalAmount)}</TableCell>
                     <TableCell>
                       <Badge variant={workerSalary.paid ? "success" : "outline"} className={workerSalary.paid ? "bg-green-100 text-green-800" : ""}>
                         {workerSalary.paid ? 'Paid' : 'Pending'}

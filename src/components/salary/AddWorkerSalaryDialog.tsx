@@ -33,6 +33,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { v4 as uuidv4 } from 'uuid';
 import { Production } from '@/types/production';
 import { useIsMobile } from "@/hooks/use-mobile";
+import { formatCurrency } from "@/lib/formatCurrency";
 
 interface AddWorkerSalaryDialogProps {
   open: boolean;
@@ -247,7 +248,7 @@ export const AddWorkerSalaryDialog: React.FC<AddWorkerSalaryDialogProps> = ({
             <SelectContent className="max-h-[300px]">
               {availableOperations.map((operation) => (
                 <SelectItem key={operation.id} value={operation.id}>
-                  {operation.name} (₹{operation.ratePerPiece}/piece)
+                  {operation.name} (₹{formatCurrency(operation.ratePerPiece)}/piece)
                 </SelectItem>
               ))}
             </SelectContent>
@@ -301,7 +302,7 @@ export const AddWorkerSalaryDialog: React.FC<AddWorkerSalaryDialogProps> = ({
           <p className="font-medium text-primary">Selected Production:</p>
           <p>{selectedProduction.productName || selectedProduction.name} ({selectedProduction.productId})</p>
           {selectedOperation && (
-            <p className="font-medium">Operation Rate: ₹{selectedOperation.ratePerPiece} per piece</p>
+            <p className="font-medium">Operation Rate: ₹{formatCurrency(selectedOperation.ratePerPiece)} per piece</p>
           )}
         </div>
       )}

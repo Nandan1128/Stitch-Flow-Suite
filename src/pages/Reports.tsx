@@ -20,6 +20,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import { DateRange } from "react-day-picker";
+import { formatCurrency } from "@/lib/formatCurrency";
 
 
 const ReportPage: React.FC = () => {
@@ -212,7 +213,7 @@ const ReportPage: React.FC = () => {
 
               <div className="bg-muted p-3 rounded-lg">
                 <div className="text-muted-foreground text-sm mb-1">Expense</div>
-                <div className="text-2xl font-bold">₹{(report.totalExpense || 0).toLocaleString()}</div>
+                <div className="text-2xl font-bold">₹{formatCurrency(report.totalExpense || 0)}</div>
               </div>
 
 
@@ -277,7 +278,7 @@ const ReportPage: React.FC = () => {
                     <TableCell>{emp.totalPiecesCompleted}</TableCell>
                     <TableCell>{emp.totalOperations}</TableCell>
                     <TableCell>{emp.efficiency}%</TableCell>
-                    <TableCell>₹{emp.earnings}</TableCell>
+                    <TableCell>₹{formatCurrency(emp.earnings)}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

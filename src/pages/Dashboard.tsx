@@ -22,6 +22,7 @@ import {
   ProductionProgressItem,
   RecentOperationItem,
 } from "@/Services/dashboardService";
+import { formatCurrency } from "@/lib/formatCurrency";
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
@@ -169,7 +170,7 @@ const Dashboard: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {isAdmin ? `₹${pendingPayments}` : workersOpsToday}
+              {isAdmin ? `₹${formatCurrency(pendingPayments)}` : workersOpsToday}
             </div>
             <p className="text-xs text-muted-foreground">
               {isAdmin ? "Pending salary payments" : "Across all tasks today"}
@@ -245,7 +246,7 @@ const Dashboard: React.FC = () => {
                   <div className="flex-1">
                     <div className="flex justify-between">
                       <p className="text-sm font-medium">{op.workerName}</p>
-                      <p className="text-xs font-semibold text-primary">₹{op.earnings}</p>
+                      <p className="text-xs font-semibold text-primary">₹{formatCurrency(op.earnings)}</p>
                     </div>
 
                     <div className="flex justify-between">

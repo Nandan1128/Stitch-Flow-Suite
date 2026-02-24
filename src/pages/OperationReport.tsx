@@ -25,6 +25,7 @@ import { Badge } from "@/components/ui/badge";
 import { format } from 'date-fns';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { ShoppingBag, Hash, Settings, User, Calendar, Box, DollarSign, Wallet } from 'lucide-react';
+import { formatCurrency } from '@/lib/formatCurrency';
 
 interface OperationReportData {
     id: string;
@@ -219,7 +220,7 @@ const OperationReport: React.FC = () => {
                 <Card>
                     <CardHeader className="pb-2">
                         <CardDescription>Total Amount</CardDescription>
-                        <CardTitle className="text-3xl">₹{summary.totalAmount.toLocaleString()}</CardTitle>
+                        <CardTitle className="text-3xl">₹{formatCurrency(summary.totalAmount)}</CardTitle>
                     </CardHeader>
                 </Card>
             </div>
@@ -379,11 +380,11 @@ const OperationReport: React.FC = () => {
                                             <div className="flex justify-between items-center mt-4 pt-3 border-t">
                                                 <div className="flex items-center text-xs text-muted-foreground">
                                                     <DollarSign className="w-3 h-3 mr-1" />
-                                                    Rate: ₹{item.rate}
+                                                    Rate: ₹{formatCurrency(item.rate)}
                                                 </div>
                                                 <div className="flex items-center font-bold text-primary">
                                                     <Wallet className="w-4 h-4 mr-1.5" />
-                                                    ₹{item.total.toLocaleString()}
+                                                    ₹{formatCurrency(item.total)}
                                                 </div>
                                             </div>
                                         </CardContent>
@@ -424,8 +425,8 @@ const OperationReport: React.FC = () => {
                                                     {item.date ? format(new Date(item.date), 'dd/MM/yyyy') : '-'}
                                                 </TableCell>
                                                 <TableCell className="text-right">{item.quantity}</TableCell>
-                                                <TableCell className="text-right">₹{item.rate}</TableCell>
-                                                <TableCell className="text-right font-semibold">₹{item.total}</TableCell>
+                                                <TableCell className="text-right">₹{formatCurrency(item.rate)}</TableCell>
+                                                <TableCell className="text-right font-semibold">₹{formatCurrency(item.total)}</TableCell>
                                             </TableRow>
                                         ))
                                     )}

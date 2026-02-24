@@ -35,6 +35,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { AddEmployeeAdvanceDialog } from "./AddEmployeeAdvanceDialog";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Card, CardContent } from "@/components/ui/card";
+import { formatCurrency } from "@/lib/formatCurrency";
 
 interface EmployeeSalaryTableProps {
   month: string;
@@ -205,11 +206,11 @@ export const EmployeeSalaryTable: React.FC<EmployeeSalaryTableProps> = ({ month,
                   <div className="grid grid-cols-2 gap-y-3 text-sm">
                     <div className="flex flex-col">
                       <span className="text-muted-foreground text-xs uppercase font-semibold">Base Salary</span>
-                      <span className="font-medium">₹{(employeesMap[salary.employeeId]?.base_salary ?? salary.salary).toLocaleString()}</span>
+                      <span className="font-medium">₹{formatCurrency(employeesMap[salary.employeeId]?.base_salary ?? salary.salary)}</span>
                     </div>
                     <div className="flex flex-col">
                       <span className="text-muted-foreground text-xs uppercase font-semibold">Advance</span>
-                      <span className="font-medium text-red-600">₹{salary.advance.toLocaleString()}</span>
+                      <span className="font-medium text-red-600">₹{formatCurrency(salary.advance)}</span>
                     </div>
                     <div className="flex flex-col">
                       <span className="text-muted-foreground text-xs uppercase font-semibold">Status</span>
@@ -225,7 +226,7 @@ export const EmployeeSalaryTable: React.FC<EmployeeSalaryTableProps> = ({ month,
                     </div>
                     <div className="flex flex-col col-span-2 border-t pt-2 mt-1">
                       <span className="text-muted-foreground text-xs uppercase font-semibold">Net Salary</span>
-                      <span className="text-lg font-bold text-primary">₹{salary.netSalary.toLocaleString()}</span>
+                      <span className="text-lg font-bold text-primary">₹{formatCurrency(salary.netSalary)}</span>
                     </div>
                   </div>
 
@@ -301,10 +302,10 @@ export const EmployeeSalaryTable: React.FC<EmployeeSalaryTableProps> = ({ month,
                     </TableCell>
                     <TableCell className="text-right">
                       {/* Prefer base salary from employees table when present, fallback to row salary */}
-                      ₹{(employeesMap[salary.employeeId]?.base_salary ?? salary.salary).toLocaleString()}
+                      ₹{formatCurrency(employeesMap[salary.employeeId]?.base_salary ?? salary.salary)}
                     </TableCell>
-                    <TableCell className="text-right">₹{salary.advance.toLocaleString()}</TableCell>
-                    <TableCell className="text-right font-medium">₹{salary.netSalary.toLocaleString()}</TableCell>
+                    <TableCell className="text-right">₹{formatCurrency(salary.advance)}</TableCell>
+                    <TableCell className="text-right font-medium">₹{formatCurrency(salary.netSalary)}</TableCell>
                     <TableCell>
                       <Badge variant={salary.paid ? "success" : "outline"} className={salary.paid ? "bg-green-100 text-green-800" : ""}>
                         {salary.paid ? 'Paid' : 'Pending'}

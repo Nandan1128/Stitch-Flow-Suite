@@ -19,7 +19,7 @@ const Header: React.FC = () => {
   return (
     <header className="bg-white border-b h-16 flex items-center justify-between px-3 sm:px-4 md:px-6 w-full sticky top-0 z-40 backdrop-blur-sm bg-white/80">
       <div className="flex items-center gap-2 sm:gap-4">
-        <SidebarTrigger />
+        <SidebarTrigger className="hidden sm:flex" />
         <div className="flex flex-col justify-center">
           <div className="flex items-center gap-1.5 sm:gap-2">
             <span className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground p-1 sm:p-1.5 rounded-lg shadow-md shrink-0">

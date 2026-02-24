@@ -4,6 +4,7 @@ import { Navigate, Outlet } from 'react-router-dom';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import Sidebar from './Sidebar';
 import Header from './Header';
+import MobileBottomNav from './MobileBottomNav';
 
 // Simple error boundary to keep layout visible even if a child errors
 class LayoutErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean }> {
@@ -56,13 +57,16 @@ const AppLayout: React.FC = () => {
         <Header />
         <LayoutErrorBoundary>
           {/* Responsive padding, scrollable but prevents overflow on x axis */}
-          <div className="flex-1 p-3 sm:p-4 md:p-6 overflow-auto max-w-full">
+          {/* Extra bottom padding on mobile so content isn't hidden under the bottom nav */}
+          <div className="flex-1 p-3 sm:p-4 md:p-6 overflow-auto max-w-full pb-20 sm:pb-6">
             <div className="max-w-5xl mx-auto w-full">
               <Outlet />
             </div>
           </div>
         </LayoutErrorBoundary>
       </SidebarInset>
+      {/* Mobile bottom navigation */}
+      <MobileBottomNav />
     </SidebarProvider>
   );
 };

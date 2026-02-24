@@ -12,6 +12,7 @@ import { EmployeeDetailsSheet } from './EmployeeDetailsSheet';
 import { EditEmployeeDialog } from './EditEmployeeDialog';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Card, CardContent } from '@/components/ui/card';
+import { formatCurrency } from '@/lib/formatCurrency';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -131,7 +132,7 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = ({
                   </div>
                   <div className="flex items-center text-muted-foreground">
                     <DollarSign className="w-4 h-4 mr-2 text-green-600" />
-                    ₹{Number(employee.salary || 0).toLocaleString()}
+                    ₹{formatCurrency(Number(employee.salary || 0))}
                   </div>
                   <div className="flex items-center text-muted-foreground col-span-2 border-t pt-2 mt-1">
                     <Calendar className="w-4 h-4 mr-2" />
@@ -218,7 +219,7 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = ({
                   <TableCell className="font-medium">{employee.employeeId}</TableCell>
                   <TableCell>{employee.name}</TableCell>
                   <TableCell>{employee.mobileNumber}</TableCell>
-                  <TableCell>₹{Number(employee.salary || 0).toLocaleString()}</TableCell>
+                  <TableCell>₹{formatCurrency(Number(employee.salary || 0))}</TableCell>
 
                   <TableCell>
                     <div className="flex items-center gap-2">
