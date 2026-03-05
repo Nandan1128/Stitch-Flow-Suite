@@ -31,13 +31,13 @@ const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png"];
 
 const formSchema = z.object({
   name: z.string().min(3, "Name must be at least 3 characters"),
-  employeeId: z.string().min(3, "EMP ID must be at least 3 characters"),
+  employeeId: z.string().min(1, "EMP ID is required").or(z.literal('')).optional().nullable(),
   permanentAddress: z.string().optional().nullable(),
-  currentAddress: z.string().optional().nullable(),
-  email: z.string().email("Invalid email address").optional().nullable(),
+  currentAddress: z.string().min(1, "Current address is required").or(z.literal('')).optional().nullable(),
+  email: z.string().email("Invalid email address").or(z.literal('')).optional().nullable(),
   mobileNumber: z.string().min(10, "Mobile number must be at least 10 digits"),
-  emergencyNumber: z.string().min(10, "Emergency number must be at least 10 digits"),
-  idProof: z.string().min(5, "ID proof must be at least 5 characters"),
+  emergencyNumber: z.string().min(10, "Emergency number must be at least 10 digits").or(z.literal('')).optional().nullable(),
+  idProof: z.string().min(2, "ID proof is required"),
   profileImage: z.any().optional().nullable(),
   idProofImage: z.instanceof(File).optional().refine(
     (file) => !file || file.size <= MAX_FILE_SIZE,
@@ -46,9 +46,8 @@ const formSchema = z.object({
     (file) => !file || ACCEPTED_IMAGE_TYPES.includes(file.type),
     'Only .jpg, .jpeg, and .png formats are supported'
   ).nullable().optional(),
-  bankName: z.string().min(1, "Bank name is required"),
   accountHolderName: z.string().min(1, "Account holder name is required"),
-  bankAccountDetail: z.string().min(5, "Bank account details must be at least 5 characters"),
+  bankAccountDetail: z.string().min(5, "Bank account details must be at least 5 characters").or(z.literal('')).optional().nullable(),
   bankname: z.string().min(1, "Bank name is required"),
   accountNumber: z.string().min(1, "Account number is required"),
   confirmAccountNumber: z.string().min(1, "Please confirm account number"),
@@ -100,7 +99,6 @@ export const AddEmployeeDialog: React.FC<AddEmployeeDialogProps> = ({
       idProof: "",
       idProofImage: null,
       addressProofImage: null,
-      bankName: "",
       accountHolderName: "",
       bankAccountDetail: "",
       bankname: "",
@@ -141,7 +139,7 @@ export const AddEmployeeDialog: React.FC<AddEmployeeDialogProps> = ({
         fieldsToValidate = ["idProof"];
         break;
       case "bank":
-        fieldsToValidate = ["bankName", "accountHolderName", "accountNumber", "confirmAccountNumber", "ifscCode", "bankAccountDetail", "salary"];
+        fieldsToValidate = ["bankname", "accountHolderName", "accountNumber", "confirmAccountNumber", "ifscCode", "bankAccountDetail", "salary"];
         break;
     }
 
@@ -172,22 +170,21 @@ export const AddEmployeeDialog: React.FC<AddEmployeeDialogProps> = ({
             name: values.name,
             employee_code: values.employeeId, // EMP ID
             email: values.email,
-            current_address: values.currentAddress,           // store in `address` column
+            current_address: values.currentAddress,
             permanent_address: values.permanentAddress,
             mobile_number: values.mobileNumber,
             emergency_number: values.emergencyNumber,
             id_proof: values.idProof,
             id_proof_image_url: idProofUrl,
             bank_account_detail: values.bankAccountDetail,
-            bankname: values.bankname,
-            bank_account_number: values.accountNumber,
-            bank_ifsc_code: values.ifscCode,
-            bank_account_holder_name: values.accountHolderName,
+            bank_name: values.bankname,
+            account_number: values.accountNumber ? Number(values.accountNumber) : null,
+            ifsc_code: values.ifscCode,
+            account_holder_name: values.accountHolderName,
             bank_image_url: bankUrl,
             salary_amount: values.salary,
             is_active: values.isActive,
             created_at: new Date().toISOString(),
-            entered_by: user?.name ?? "system",
           },
         ])
         .select("*")

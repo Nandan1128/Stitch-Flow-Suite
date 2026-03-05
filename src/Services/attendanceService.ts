@@ -102,8 +102,8 @@ export const getMonthlyAttendanceSummary = async (employeeId: string, month: num
     }
 
     const present = data.filter((r) => r.status === "present").length;
-    const absent  = data.filter((r) => r.status === "absent").length;
-    const leave   = data.filter((r) => r.status === "leave").length;
+    const absent = data.filter((r) => r.status === "absent").length;
+    const leave = data.filter((r) => r.status === "leave").length;
 
     return {
         totalDays: lastDay,
@@ -117,8 +117,12 @@ export const getMonthlyAttendanceSummary = async (employeeId: string, month: num
 
 export const getAttendanceForMonth = async (month: number, year: number) => {
     try {
-        const from = new Date(year, month - 1, 1).toISOString().slice(0, 10);
-        const to = new Date(year, month, 1).toISOString().slice(0, 10);
+        const monthStr = String(month).padStart(2, "0");
+        const nextMonthStr = String(month === 12 ? 1 : month + 1).padStart(2, "0");
+        const nextMonthYear = month === 12 ? year + 1 : year;
+
+        const from = `${year}-${monthStr}-01`;
+        const to = `${nextMonthYear}-${nextMonthStr}-01`;
 
         const { data, error } = await supabase
             .from("attendance")

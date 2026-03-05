@@ -52,10 +52,7 @@ export const AttendanceDialog: React.FC<Props> = ({ open, onOpenChange, markedBy
 
                 let iso = "1970-01-01";
                 if (date instanceof Date && !isNaN(date.getTime())) {
-                    const y = date.getFullYear();
-                    const m = String(date.getMonth() + 1).padStart(2, "0");
-                    const d = String(date.getDate()).padStart(2, "0");
-                    iso = `${y}-${m}-${d}`;
+                    iso = format(date, "yyyy-MM-dd");
                 } else {
                     setDate(new Date());
                     return;
@@ -99,10 +96,7 @@ export const AttendanceDialog: React.FC<Props> = ({ open, onOpenChange, markedBy
             return;
         }
 
-        const y = date.getFullYear();
-        const m = String(date.getMonth() + 1).padStart(2, "0");
-        const d = String(date.getDate()).padStart(2, "0");
-        const iso = `${y}-${m}-${d}`;
+        const iso = format(date, "yyyy-MM-dd");
 
         const rows = employees.map((emp) => ({
             person_type: "employee" as const,
