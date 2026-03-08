@@ -199,7 +199,7 @@ export const AddProductionDialog: React.FC<Props> = ({ open, onOpenChange, produ
           />
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t sticky bottom-0 bg-background">
+        <div className="flex flex-col sm:flex-row gap-3 pt-4 mt-6 border-t">
           <Button type="submit" className="flex-1">Save Production</Button>
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="flex-1">
             Cancel

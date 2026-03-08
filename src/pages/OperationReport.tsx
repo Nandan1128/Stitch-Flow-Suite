@@ -19,6 +19,10 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Check, ChevronsUpDown } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Loader2, FileText, X, Download } from "lucide-react";
 import { fetchOperationWiseReport } from "@/Services/reportService";
 import { Badge } from "@/components/ui/badge";
@@ -59,6 +63,7 @@ const OperationReport: React.FC = () => {
     const [selectedProduct, setSelectedProduct] = useState<string>("all");
     const [selectedOperation, setSelectedOperation] = useState<string>("all");
     const [selectedWorker, setSelectedWorker] = useState<string>("all");
+    const [workerSearchOpen, setWorkerSearchOpen] = useState(false);
 
     // Get unique values for filter dropdowns
     const { products, operations, workers } = useMemo(() => {
@@ -78,10 +83,14 @@ const OperationReport: React.FC = () => {
             }
         });
 
+        const sortedWorkers = Array.from(workerSet.entries())
+            .map(([id, name]) => ({ id, name }))
+            .sort((a, b) => a.name.localeCompare(b.name));
+
         return {
             products: Array.from(productSet.entries()).map(([id, name]) => ({ id, name })),
             operations: Array.from(operationSet.entries()).map(([id, name]) => ({ id, name })),
-            workers: Array.from(workerSet.entries()).map(([id, name]) => ({ id, name })),
+            workers: sortedWorkers,
         };
     }, [data]);
 
@@ -307,19 +316,64 @@ const OperationReport: React.FC = () => {
                         {/* Worker */}
                         <div className="space-y-2">
                             <Label>Worker</Label>
-                            <Select value={selectedWorker} onValueChange={setSelectedWorker}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="All Workers" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">All Workers</SelectItem>
-                                    {workers.map((worker) => (
-                                        <SelectItem key={worker.id} value={worker.id}>
-                                            {worker.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                            <Popover open={workerSearchOpen} onOpenChange={setWorkerSearchOpen}>
+                                <PopoverTrigger asChild>
+                                    <Button
+                                        variant="outline"
+                                        role="combobox"
+                                        aria-expanded={workerSearchOpen}
+                                        className="w-full justify-between"
+                                    >
+                                        {selectedWorker === "all"
+                                            ? "All Workers"
+                                            : workers.find((w) => w.id === selectedWorker)?.name || "All Workers"}
+                                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-full p-0">
+                                    <Command>
+                                        <CommandInput placeholder="Search workers..." />
+                                        <CommandList>
+                                            <CommandEmpty>No worker found.</CommandEmpty>
+                                            <CommandGroup>
+                                                <CommandItem
+                                                    value="all"
+                                                    onSelect={() => {
+                                                        setSelectedWorker("all");
+                                                        setWorkerSearchOpen(false);
+                                                    }}
+                                                >
+                                                    <Check
+                                                        className={cn(
+                                                            "mr-2 h-4 w-4",
+                                                            selectedWorker === "all" ? "opacity-100" : "opacity-0"
+                                                        )}
+                                                    />
+                                                    All Workers
+                                                </CommandItem>
+                                                {workers.map((worker) => (
+                                                    <CommandItem
+                                                        key={worker.id}
+                                                        value={worker.name}
+                                                        onSelect={() => {
+                                                            setSelectedWorker(worker.id);
+                                                            setWorkerSearchOpen(false);
+                                                        }}
+                                                    >
+                                                        <Check
+                                                            className={cn(
+                                                                "mr-2 h-4 w-4",
+                                                                selectedWorker === worker.id ? "opacity-100" : "opacity-0"
+                                                            )}
+                                                        />
+                                                        {worker.name}
+                                                    </CommandItem>
+                                                ))}
+                                            </CommandGroup>
+                                        </CommandList>
+                                    </Command>
+                                </PopoverContent>
+                            </Popover>
                         </div>
                     </div>
                 </CardContent>

@@ -16,7 +16,8 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MoreHorizontal, Calendar, Calendar as CalendarIcon, User, DollarSign, Wallet, Edit } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { MoreHorizontal, Calendar, Calendar as CalendarIcon, User, DollarSign, Wallet, Edit, Search } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -54,6 +55,7 @@ export const EmployeeSalaryTable: React.FC<EmployeeSalaryTableProps> = ({ month,
   const { user } = useAuth();
   const [advanceOpen, setAdvanceOpen] = useState(false);
   const [advanceEmpId, setAdvanceEmpId] = useState<string>("");
+  const [searchQuery, setSearchQuery] = useState("");
   const isMobile = useIsMobile();
 
   // show toast when load fails so user notices error
@@ -113,16 +115,19 @@ export const EmployeeSalaryTable: React.FC<EmployeeSalaryTableProps> = ({ month,
   };
 
   // show only salaries matching selected month/year (robust date handling)
-  const filteredSalaries = useMemo(() => {
+  const filteredAndSortedSalaries = useMemo(() => {
     const selectedMonth = Number(month);
     const selectedYear = Number(year);
-    return (salaries || []).filter(s => {
-      const raw = s.month;
-      const d = raw instanceof Date ? raw : new Date(raw);
-      if (isNaN(d.getTime())) return false; // ignore invalid dates
-      return d.getMonth() === selectedMonth && d.getFullYear() === selectedYear;
-    });
-  }, [salaries, month, year]);
+    return (salaries || [])
+      .filter(s => {
+        const raw = s.month;
+        const d = raw instanceof Date ? raw : new Date(raw);
+        if (isNaN(d.getTime())) return false; // ignore invalid dates
+        return d.getMonth() === selectedMonth && d.getFullYear() === selectedYear;
+      })
+      .filter(s => s.employeeName?.toLowerCase().includes(searchQuery.toLowerCase()))
+      .sort((a, b) => (a.employeeName || "").localeCompare(b.employeeName || ""));
+  }, [salaries, month, year, searchQuery]);
 
   return (
     <div className="space-y-4">
@@ -138,6 +143,18 @@ export const EmployeeSalaryTable: React.FC<EmployeeSalaryTableProps> = ({ month,
       )}
 
       {/* Selector removed from here, controlled by parent */}
+      <div className="flex justify-end mb-4">
+        <div className="relative w-full sm:w-64">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            type="search"
+            placeholder="Search employees..."
+            className="pl-8"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+      </div>
 
       {isMobile ? (
         <div className="space-y-4">
@@ -145,12 +162,12 @@ export const EmployeeSalaryTable: React.FC<EmployeeSalaryTableProps> = ({ month,
             <div className="text-center py-10 text-muted-foreground border rounded-lg bg-muted/20">
               Loading employee salaries...
             </div>
-          ) : filteredSalaries.length === 0 ? (
+          ) : filteredAndSortedSalaries.length === 0 ? (
             <div className="text-center py-10 text-muted-foreground border rounded-lg bg-muted/20">
-              No salary records found
+              No salary records found matching your filters
             </div>
           ) : (
-            filteredSalaries.map((salary) => (
+            filteredAndSortedSalaries.map((salary) => (
               <Card key={salary.id} className="overflow-hidden">
                 <CardContent className="p-4">
                   <div className="flex justify-between items-start mb-4">
@@ -279,14 +296,14 @@ export const EmployeeSalaryTable: React.FC<EmployeeSalaryTableProps> = ({ month,
                     Loading employee salaries...
                   </TableCell>
                 </TableRow>
-              ) : filteredSalaries.length === 0 ? (
+              ) : filteredAndSortedSalaries.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={8} className="h-24 text-center">
-                    No salary records found
+                    No salary records found matching your filters
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredSalaries.map((salary) => (
+                filteredAndSortedSalaries.map((salary) => (
                   <TableRow key={salary.id}>
                     <TableCell>
                       <div className="flex flex-col">

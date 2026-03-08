@@ -11,7 +11,6 @@ import { Label } from "@/components/ui/label";
 import { getWorkers } from "@/Services/workerService";
 import { getProductions, insertProductionOperation, checkAndUpdateProductionStatus, getOperationsByProductionId } from "@/Services/productionService";
 import { getOperationsByProduct } from "@/Services/operationService";
-import { addWorkerSalary } from "@/Services/salaryService";
 import { formatCurrency } from "@/lib/formatCurrency";
 
 interface Props {
@@ -245,33 +244,6 @@ const WorkerBulkEntryDialog: React.FC<Props> = ({ open, onOpenChange }) => {
                     entered_by: enteredBy,
                 });
 
-                try {
-                    const salaryResult = await addWorkerSalary({
-                        worker_id: selectedWorkerId,
-                        product_id: prod?.product_id ?? null,
-                        operation_id: row.masterOpId,
-                        pieces_done: row.pieces,
-                        amount_per_piece: amountPerPiece,
-                        total_amount: totalAmount,
-                        date: dateStr,
-                        created_by: enteredBy,
-                    });
-                    if (salaryResult?.error) {
-                        console.error("Salary creation failed:", salaryResult.error);
-                        toast({
-                            title: "Warning",
-                            description: `Salary record failed for one operation: ${salaryResult.error.message}`,
-                            variant: "destructive"
-                        });
-                    }
-                } catch (salErr: any) {
-                    console.error("Salary error:", salErr);
-                    toast({
-                        title: "Warning",
-                        description: `Salary record failed: ${salErr.message || 'Unknown error'}`,
-                        variant: "destructive"
-                    });
-                }
                 count++;
             }
 

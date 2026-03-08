@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Table,
   TableBody,
@@ -16,7 +16,8 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MoreHorizontal, Calendar, CalendarDays, Eye, User } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { MoreHorizontal, Calendar, CalendarDays, Eye, User, Search } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -58,6 +59,7 @@ export const WorkerSalaryTable: React.FC<WorkerSalaryTableProps> = ({
   const isMobile = useIsMobile();
   const [advanceOpen, setAdvanceOpen] = useState(false);
   const [advanceWorkerId, setAdvanceWorkerId] = useState<string>("");
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     console.log("Debug salaries:", salaries);
@@ -121,6 +123,12 @@ export const WorkerSalaryTable: React.FC<WorkerSalaryTableProps> = ({
 
     setAggregatedSalaries(Array.from(workerSalaryMap.values()));
   }, [month, year, salaries, productions]);
+
+  const filteredAndSortedSalaries = useMemo(() => {
+    return aggregatedSalaries
+      .filter(ws => ws.workerName.toLowerCase().includes(searchQuery.toLowerCase()))
+      .sort((a, b) => a.workerName.localeCompare(b.workerName));
+  }, [aggregatedSalaries, searchQuery]);
 
   const { toast } = useToast();
   const { user } = useAuth();
@@ -247,40 +255,52 @@ export const WorkerSalaryTable: React.FC<WorkerSalaryTableProps> = ({
 
   return (
     <div className="space-y-4">
-      <div className={`flex ${isMobile ? "flex-col" : "items-center"} gap-2`}>
-        <div className={`flex items-center gap-2 ${isMobile ? "w-full" : ""}`}>
-          <CalendarDays className="h-4 w-4 opacity-50 flex-shrink-0" />
-          <Select value={month} onValueChange={setMonth}>
-            <SelectTrigger className={`${isMobile ? "w-full" : "w-[150px]"}`}>
-              <SelectValue placeholder="Select month" />
+      <div className={`flex ${isMobile ? "flex-col" : "items-center justify-between"} gap-4`}>
+        <div className={`flex ${isMobile ? "flex-col" : "items-center"} gap-2`}>
+          <div className={`flex items-center gap-2 ${isMobile ? "w-full" : ""}`}>
+            <CalendarDays className="h-4 w-4 opacity-50 flex-shrink-0" />
+            <Select value={month} onValueChange={setMonth}>
+              <SelectTrigger className={`${isMobile ? "w-full" : "w-[150px]"}`}>
+                <SelectValue placeholder="Select month" />
+              </SelectTrigger>
+              <SelectContent>
+                {months.map(m => (
+                  <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <Select value={year} onValueChange={setYear}>
+            <SelectTrigger className={`${isMobile ? "w-full" : "w-[100px]"}`}>
+              <SelectValue placeholder="Select year" />
             </SelectTrigger>
             <SelectContent>
-              {months.map(m => (
-                <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+              {years.map(y => (
+                <SelectItem key={y} value={y}>{y}</SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
-        <Select value={year} onValueChange={setYear}>
-          <SelectTrigger className={`${isMobile ? "w-full" : "w-[100px]"}`}>
-            <SelectValue placeholder="Select year" />
-          </SelectTrigger>
-          <SelectContent>
-            {years.map(y => (
-              <SelectItem key={y} value={y}>{y}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="relative w-full sm:w-64">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            type="search"
+            placeholder="Search workers..."
+            className="pl-8"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
       </div>
 
       {isMobile ? (
         <div className="space-y-4">
-          {aggregatedSalaries.length === 0 ? (
+          {filteredAndSortedSalaries.length === 0 ? (
             <div className="text-center py-10 text-muted-foreground border rounded-lg bg-muted/20">
-              No salary records found for the selected period
+              No salary records found matching your filters
             </div>
           ) : (
-            aggregatedSalaries.map((workerSalary) => (
+            filteredAndSortedSalaries.map((workerSalary) => (
               <Card key={workerSalary.workerId} className="overflow-hidden">
                 <CardContent className="p-4">
                   <div className="flex justify-between items-start mb-4">
@@ -384,14 +404,14 @@ export const WorkerSalaryTable: React.FC<WorkerSalaryTableProps> = ({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {aggregatedSalaries.length === 0 ? (
+              {filteredAndSortedSalaries.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="h-24 text-center">
-                    No salary records found for the selected period
+                    No salary records found matching your filters
                   </TableCell>
                 </TableRow>
               ) : (
-                aggregatedSalaries.map((workerSalary) => (
+                filteredAndSortedSalaries.map((workerSalary) => (
                   <TableRow key={workerSalary.workerId}>
                     <TableCell className="font-medium">{workerSalary.workerName}</TableCell>
                     <TableCell className={`${isMobile ? "" : "text-right"}`}>{workerSalary.totalPieces}</TableCell>
@@ -473,7 +493,7 @@ export const WorkerSalaryTable: React.FC<WorkerSalaryTableProps> = ({
             const mapped: WorkerSalary = {
               id: newRecord.id,
               workerId: newRecord.worker_id,
-              workerName: aggregatedSalaries.find(s => s.workerId === newRecord.worker_id)?.workerName,
+              workerName: filteredAndSortedSalaries.find(s => s.workerId === newRecord.worker_id)?.workerName,
               productId: "",
               date: newRecord.date,
               operationId: "",

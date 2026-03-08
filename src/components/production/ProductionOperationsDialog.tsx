@@ -20,7 +20,6 @@ import { getOperationsByProduct } from "@/Services/operationService";
 import { getWorkers } from "@/Services/workerService";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { addWorkerSalary, updateWorkerSalaryByOps, deleteWorkerSalary } from "@/Services/salaryService";
 import { deleteProductionOperation, checkAndUpdateProductionStatus } from "@/Services/productionService";
 import { useQueryClient } from "@tanstack/react-query";
 import { formatCurrency } from "@/lib/formatCurrency";
@@ -234,36 +233,6 @@ const ProductionOperationsDialog: React.FC<Props> = ({ open, onOpenChange, produ
           entered_by: enteredBy,
         };
 
-        await insertProductionOperation(payload);
-
-        try {
-          const salaryResult = await addWorkerSalary({
-            worker_id: bulkWorkerId,
-            product_id: (production as any).product_id ?? null,
-            operation_id: row.masterOpId,
-            pieces_done: row.pieces,
-            amount_per_piece: amountPerPiece,
-            total_amount: totalAmount,
-            date: dateStr,
-            created_by: enteredBy,
-          });
-          if (salaryResult?.error) {
-            console.error("Salary creation failed:", salaryResult.error);
-            toast({
-              title: "Warning",
-              description: `Salary record creation failed for ${workerName || 'worker'}: ${salaryResult.error.message}`,
-              variant: "destructive"
-            });
-          }
-        } catch (salErr: any) {
-          console.error("Salary sync exception for bulk row:", salErr);
-          toast({
-            title: "Warning",
-            description: `Salary record creation failed: ${salErr.message || 'Unknown error'}`,
-            variant: "destructive"
-          });
-        }
-
         successCount++;
       }
 
@@ -365,40 +334,6 @@ const ProductionOperationsDialog: React.FC<Props> = ({ open, onOpenChange, produ
         };
 
         await insertProductionOperation(payload);
-        toast({ title: "Added", description: "Operation record created" });
-
-        try {
-          if (selectedWorkerId && Number(pieces) > 0) {
-            const amountPerPiece = master?.amount_per_piece ?? master?.rate ?? 0;
-            const total = (Number(pieces) || 0) * Number(amountPerPiece || 0);
-            const salaryResult = await addWorkerSalary({
-              worker_id: selectedWorkerId,
-              product_id: (production as any).product_id ?? null,
-              operation_id: masterId,
-              pieces_done: Number(pieces || 0),
-              amount_per_piece: Number(amountPerPiece || 0),
-              total_amount: total,
-              date: payload.date,
-              created_by: payload.entered_by,
-            });
-            if (salaryResult?.error) {
-              console.error("Salary creation failed:", salaryResult.error);
-              toast({
-                title: "Warning",
-                description: `Production record created but salary record failed: ${salaryResult.error.message}`,
-                variant: "destructive"
-              });
-            }
-          }
-        } catch (err: any) {
-          console.error("Salary sync failed:", err);
-          toast({
-            title: "Warning",
-            description: `Production record created but salary record failed: ${err.message || 'Unknown error'}`,
-            variant: "destructive"
-          });
-        }
-
         const refreshed = await getOperationsByProductionId(production.id);
         setOps(refreshed || []);
 
@@ -436,74 +371,6 @@ const ProductionOperationsDialog: React.FC<Props> = ({ open, onOpenChange, produ
 
       await assignWorkerToOperation(production.id, targetOpId, selectedWorkerId || null, pieces || 0, workerName || null, enteredBy, earningsValue);
       toast({ title: "Saved", description: "Operation updated" });
-
-      try {
-        const opBefore2 = ops.find(o => o.id === targetOpId);
-        const amountPerPiece2 = opBefore2?.operations?.amount_per_piece ?? opBefore2?.rate_per_piece ?? opBefore2?.rate ?? 0;
-        const total = (Number(pieces) || 0) * Number(amountPerPiece2 || 0);
-
-        const oldWorkerId = opBefore?.worker_id;
-        const oldDate = opBefore?.date;
-        const masterOpId = opBefore?.operation_id;
-
-        if (masterOpId && oldDate && selectedWorkerId) {
-          if (oldWorkerId && oldWorkerId !== selectedWorkerId) {
-            await deleteWorkerSalary(oldWorkerId, masterOpId, oldDate);
-            if (Number(pieces) > 0) {
-              const salaryResult = await addWorkerSalary({
-                worker_id: selectedWorkerId,
-                product_id: (production as any).product_id ?? null,
-                operation_id: masterOpId,
-                pieces_done: Number(pieces || 0),
-                amount_per_piece: Number(amountPerPiece || 0),
-                total_amount: total,
-                date: new Date().toISOString(),
-                created_by: enteredBy,
-              });
-              if (salaryResult?.error) {
-                console.error("Salary creation failed:", salaryResult.error);
-                toast({
-                  title: "Warning",
-                  description: `Production updated but salary record creation failed: ${salaryResult.error.message}`,
-                  variant: "destructive"
-                });
-              }
-            }
-          } else if (oldWorkerId) {
-            await updateWorkerSalaryByOps(oldWorkerId, masterOpId, oldDate, {
-              pieces_done: Number(pieces),
-              total_amount: total
-            });
-          } else if (Number(pieces) > 0) {
-            const salaryResult = await addWorkerSalary({
-              worker_id: selectedWorkerId,
-              product_id: (production as any).product_id ?? null,
-              operation_id: masterOpId,
-              pieces_done: Number(pieces || 0),
-              amount_per_piece: Number(amountPerPiece || 0),
-              total_amount: total,
-              date: new Date().toISOString(),
-              created_by: enteredBy,
-            });
-            if (salaryResult?.error) {
-              console.error("Salary creation failed:", salaryResult.error);
-              toast({
-                title: "Warning",
-                description: `Production updated but salary record creation failed: ${salaryResult.error.message}`,
-                variant: "destructive"
-              });
-            }
-          }
-        }
-      } catch (err: any) {
-        console.error("Salary sync failed:", err);
-        toast({
-          title: "Warning",
-          description: `Production updated but salary sync failed: ${err.message || 'Unknown error'}`,
-          variant: "destructive"
-        });
-      }
-
       const refreshed = await getOperationsByProductionId(production.id);
       setOps(refreshed || []);
       queryClient.invalidateQueries({ queryKey: ["operation-report"] });
@@ -533,14 +400,6 @@ const ProductionOperationsDialog: React.FC<Props> = ({ open, onOpenChange, produ
     if (!deletingOperationId) return;
     try {
       await deleteProductionOperation(deletingOperationId);
-      const opToDelete = ops.find(o => o.id === deletingOperationId);
-      if (opToDelete && opToDelete.worker_id && opToDelete.operation_id && opToDelete.date) {
-        try {
-          await deleteWorkerSalary(opToDelete.worker_id, opToDelete.operation_id, opToDelete.date);
-        } catch (salErr) {
-          console.warn("Salary deletion failed", salErr);
-        }
-      }
       toast({ title: "Deleted", description: "Record removed" });
       const refreshed = await getOperationsByProductionId(production!.id);
       setOps(refreshed || []);
@@ -872,7 +731,7 @@ const ProductionOperationsDialog: React.FC<Props> = ({ open, onOpenChange, produ
       <div className="mt-4">
         <h4 className="font-medium">Existing Operation Records</h4>
         <div className="mt-2 space-y-2 max-h-[300px] overflow-y-auto pr-2">
-          {ops.filter(o => Number(o.pieces_done ?? 0) > 0).map(o => (
+          {[...ops].reverse().filter(o => Number(o.pieces_done ?? 0) > 0).map(o => (
             <div key={o.id} className="border rounded p-2 flex justify-between items-start group">
               <div>
                 <div className="text-sm font-medium">{o.operations?.name ?? o.operation_id}</div>
