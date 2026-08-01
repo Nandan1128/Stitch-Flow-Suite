@@ -1,7 +1,7 @@
 📦 Mohil Enterprise – Production, Attendance & Payroll Automation System
 
 A full-stack management system built for manufacturing businesses to automate employee attendance, production tracking, and payroll calculations.
-The system integrates employees, workers, operations, production, and attendance modules into a unified workflow, reducing manual work and ensuring accurate salary computation.
+The system integrates employees, workers, operations, production, and attendance modules into a unified workflow, reducing manual work and ensuring accurate salary computation .
 
 🚀 Features
 
